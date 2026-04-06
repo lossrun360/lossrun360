@@ -150,7 +150,7 @@ export async function handleStripeWebhook(body: string, signature: string) {
 
   switch (event.type) {
     case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.CheckoutSession
+      const session = event.data.object as Stripe.Checkout.Session
       await handleCheckoutComplete(session)
       break
     }
@@ -176,7 +176,7 @@ export async function handleStripeWebhook(body: string, signature: string) {
 
 // ─── Private Helpers ──────────────────────────────────────────────────────────
 
-async function handleCheckoutComplete(session: Stripe.CheckoutSession) {
+async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   if (!session.metadata?.agencyId) return
 
   const agencyId = session.metadata.agencyId
@@ -241,3 +241,4 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     data: { status: 'PAST_DUE' },
   })
 }
+
