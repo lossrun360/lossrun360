@@ -1,68 +1,87 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
-  theme: {
-    extend: {
-      colors: {
-        background: '#050709',
-        surface: '#0d1117',
-        'surface-2': '#161b22',
-        'surface-3': '#1c2128',
-        border: '#21262d',
-        'border-2': '#30363d',
-        primary: {
-          DEFAULT: '#3b82f6',
-          hover: '#2563eb',
-          light: '#60a5fa',
-          dark: '#1d4ed8',
-        },
-        accent: {
-          DEFAULT: '#f97316',
-          hover: '#ea6c0a',
-          light: '#fb923c',
-        },
-        success: '#10b981',
-        warning: '#f59e0b',
-        danger: '#ef4444',
-        'text-primary': '#e6edf3',
-        'text-secondary': '#8b949e',
-        'text-muted': '#484f58',
-      },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
-      },
-      boxShadow: {
-        glow: '0 0 20px rgba(59, 130, 246, 0.15)',
-        'glow-accent': '0 0 20px rgba(249, 115, 22, 0.15)',
-        card: '0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.6)',
-        'card-hover': '0 4px 12px rgba(0,0,0,0.5)',
-      },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'grid-pattern':
-          "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2321262d' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-      },
-      animation: {
-        'fade-in': 'fadeIn 0.2s ease-in-out',
-        'slide-in': 'slideIn 0.2s ease-out',
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-      },
-      keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideIn: {
-          '0%': { transform: 'translateY(-8px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
-        },
-      },
+    content: [
+          './pages/**/*.{js,ts,jsx,tsx,mdx}',
+          './components/**/*.{js,ts,jsx,tsx,mdx}',
+          './app/**/*.{js,ts,jsx,tsx,mdx}',
+        ],
+    theme: {
+          extend: {
+                  colors: {
+                            // ── Light-theme base ──────────────────────────────────
+                    background:  '#F2F5FB',
+                            surface:     '#FFFFFF',
+                            'surface-2': '#EEF2FA',
+                            'surface-3': '#E3EAF5',
+                            border:      '#D8E0EE',
+                            'border-2':  '#BCC8E0',
+
+                            // ── Brand blue ────────────────────────────────────────
+                            primary: {
+                                        DEFAULT: '#1654D9',
+                                        hover:   '#1244BB',
+                                        light:   '#4A7BEE',
+                                        dark:    '#0D3799',
+                            },
+
+                            // ── Orange accent — gives LossRun360 its own personality
+                            accent: {
+                                        DEFAULT: '#E8691A',
+                                        hover:   '#D05A0C',
+                                        light:   '#F0844A',
+                            },
+
+                            // ── Semantic ──────────────────────────────────────────
+                            success: '#0D7A52',
+                            warning: '#B45309',
+                            danger:  '#C81933',
+
+                            // ── Typography ────────────────────────────────────────
+                            'text-primary':   '#0D1C38',
+                            'text-secondary': '#455270',
+                            'text-muted':     '#7D8EA8',
+
+                            // ── Sidebar (stays deep navy) ─────────────────────────
+                            'sidebar-bg':          '#0F2558',
+                            'sidebar-border':      '#1A3570',
+                            'sidebar-text':        '#8FAFD6',
+                            'sidebar-text-active': '#FFFFFF',
+                  },
+
+                  fontFamily: {
+                            sans: ['Inter', 'system-ui', 'sans-serif'],
+                            mono: ['JetBrains Mono', 'monospace'],
+                  },
+
+                  boxShadow: {
+                            card:          '0 1px 3px rgba(14,28,62,0.08), 0 0 0 1px rgba(14,28,62,0.05)',
+                            'card-hover':  '0 4px 16px rgba(14,28,62,0.12), 0 0 0 1px rgba(14,28,62,0.07)',
+                            'card-md':     '0 2px 8px rgba(14,28,62,0.10)',
+                            focus:         '0 0 0 3px rgba(22,84,217,0.20)',
+                            glow:          '0 0 24px rgba(22,84,217,0.18)',
+                  },
+
+                  backgroundImage: {
+                            'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                  },
+
+                  animation: {
+                            'fade-in':    'fadeIn 0.2s ease-in-out',
+                            'slide-in':   'slideIn 0.2s ease-out',
+                            'pulse-slow': 'pulse 3s cubic-bezier(0.4,0,0.6,1) infinite',
+                  },
+
+                  keyframes: {
+                            fadeIn: {
+                                        '0%':   { opacity: '0' },
+                                        '100%': { opacity: '1' },
+                            },
+                            slideIn: {
+                                        '0%':   { transform: 'translateY(-8px)', opacity: '0' },
+                                        '100%': { transform: 'translateY(0)',    opacity: '1' },
+                            },
+                  },
+          },
     },
-  },
-  plugins: [],
+    plugins: [],
 }
