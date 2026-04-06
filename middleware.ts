@@ -1,38 +1,34 @@
-import { getToken } from 'next-auth/jwt'
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function middleware(req: NextRequest) {
-    const { pathname } = req.nextUrl
+export function middleware(req: NextRequest) {
+      const { pathname } = req.nextUrl
 
-  // Public routes — always allow
+  // Public routes - always allow
   if (
-        pathname === '/' ||
-        pathname.startsWith('/api/auth') ||
-        pathname.startsWith('/api/webhooks') ||
-        pathname === '/login' ||
-        pathname === '/register' ||
-        pathname.startsWith('/_next') ||
-        pathname.startsWith('/favicon') ||
-        pathname.startsWith('/logo')
-      ) {
-        return NextResponse.next()
+          pathname === '/' ||
+          pathname.startsWith('/api/auth') ||
+          pathname.startsWith('/api/webhooks') ||
+          pathname === '/login' ||
+          pathname === '/register' ||
+          pathname.startsWith('/_next') ||
+          pathname.startsWith('/favicon') ||
+          pathname.startsWith('/logo')
+        ) {
+          return NextResponse.next()
   }
 
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+  // Check for session cookie (next-auth sets this)
+  const sessionToken =
+          req.cookies.get('next-auth.session-token')?.value ||
+          req.cookies.get('__Secure-next-auth.session-token')?.value
 
-  // Not logged in — redirect to login
-  if (!token) {
-        return NextResponse.redirect(new URL('/login', req.url))
-  }
-
-  // Admin routes — require SUPER_ADMIN
-  if (pathname.startsWith('/admin') && token.role !== 'SUPER_ADMIN') {
-        return NextResponse.redirect(new URL('/dashboard', req.url))
+  if (!sessionToken) {
+          return NextResponse.redirect(new URL('/login', req.url))
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-    matcher: ['/((?!_next/static|_next/image|favicon.ico|logo.png).*)'],
+      matcher: ['/((?!_next/static|_next/image|favicon.ico|logo.png).*)'],
 }
