@@ -49,7 +49,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       data: { generatedAt: new Date() },
     })
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="LossRunRequest_${request.dotNumber}_${request.companyName.replace(/[^a-z0-9]/gi, '_')}.pdf"`,
