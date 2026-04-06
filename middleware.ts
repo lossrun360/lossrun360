@@ -1,40 +1,38 @@
-import { withAuth } from 'next-auth/middleware'
-import { NextResponse } from 'next/server'
+import { getToken } from 'next-auth/jwt'
+import { NextRequest, NextResponse } from 'next/server'
 
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token
-    const isAdminRoute = req.nextUrl.pathname.startsWith('/admin')
+export async function middleware(req: NextRequest) {
+    const { pathname } = req.nextUrl
 
-    // Protect admin routes
-    if (isAdminRoute && token?.role !== 'SUPER_ADMIN') {
-      return NextResponse.redirect(new URL('/dashboard', req.url))
-    }
-
-    return NextResponse.next()
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        const { pathname } = req.nextUrl
-        // Public routes
-        if (
-          pathname === '/' ||
-          pathname.startsWith('/api/auth') ||
-          pathname.startsWith('/api/webhooks') ||
-          pathname === '/login' ||
-          pathname === '/register' ||
-          pathname.startsWith('/_next') ||
-          pathname.startsWith('/favicon')
-        ) {
-          return true
-        }
-        return !!token
-      },
-    },
+  // Public routes — always allow
+  if (
+        pathname === '/' ||
+        pathname.startsWith('/api/auth') ||
+        pathname.startsWith('/api/webhooks') ||
+        pathname === '/login' ||
+        pathname === '/register' ||
+        pathname.startsWith('/_next') ||
+        pathname.startsWith('/favicon') ||
+        pathname.startsWith('/logo')
+      ) {
+        return NextResponse.next()
   }
-)
+
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+
+  // Not logged in — redirect to login
+  if (!token) {
+        return NextResponse.redirect(new URL('/login', req.url))
+  }
+
+  // Admin routes — require SUPER_ADMIN
+  if (pathname.startsWith('/admin') && token.role !== 'SUPER_ADMIN') {
+        return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
+
+  return NextResponse.next()
+}
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|logo.png).*)'],
+    matcher: ['/((?!_next/static|_next/image|favicon.ico|logo.png).*)'],
 }
