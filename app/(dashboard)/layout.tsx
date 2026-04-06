@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/auth'
-import { Sidebar } from '@/components/layout/sidebar'
+import { TopNav } from '@/components/layout/topnav'
 import { SessionProvider } from './session-provider'
 
 export default async function DashboardLayout({
@@ -17,9 +17,9 @@ export default async function DashboardLayout({
 
   return (
     <SessionProvider session={session}>
-      <div className="flex h-screen overflow-hidden bg-background">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto">
+      <div className="min-h-screen flex flex-col" style={{ background: '#F4F7FC' }}>
+        <TopNav />
+        <main className="flex-1">
           {children}
         </main>
       </div>
