@@ -1,0 +1,341 @@
+// LossRun360 — Prisma Schema
+// Run: npx prisma generate && npx prisma db push
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  AGENCY_ADMIN
+  AGENT
+  VIEWER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+enum PlanTier {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum RequestStatus {
+  DRAFT
+  PENDING_SIGNATURE
+  SIGNED
+  SENT_TO_CARRIER
+  COMPLETED
+  CANCELLED
+}
+
+enum SignatureStatus {
+  PENDING
+  SIGNED
+  DECLINED
+  EXPIRED
+}
+
+// ─── Agency ───────────────────────────────────────────────────────────────────
+
+model Agency {
+  id                String             @id @default(cuid())
+  name              String
+  slug              String             @unique
+  email             String             @unique
+  phone             String?
+  address           String?
+  city              String?
+  state             String?
+  zip               String?
+  website           String?
+  logoUrl           String?
+  licenseNumber     String?
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  // Relations
+  users             User[]
+  requests          LossRunRequest[]
+  subscription      Subscription?
+  apiUsage          ApiUsage[]
+
+  @@index([slug])
+}
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role      @default(AGENT)
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Agency relationship
+  agencyId      String?
+  agency        Agency?   @relation(fields: [agencyId], references: [id])
+
+  // NextAuth
+  accounts      Account[]
+  sessions      Session[]
+
+  // App relations
+  requests      LossRunRequest[]
+  apiUsage      ApiUsage[]
+
+  @@index([agencyId])
+  @@index([email])
+}
+
+// ─── NextAuth Models ──────────────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Subscription ─────────────────────────────────────────────────────────────
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  agencyId             String             @unique
+  agency               Agency             @relation(fields: [agencyId], references: [id])
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  stripePriceId        String?
+  planTier             PlanTier           @default(STARTER)
+  status               SubscriptionStatus @default(TRIALING)
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  trialEndAt           DateTime?
+  requestsPerMonth     Int                @default(25)
+  usersAllowed         Int                @default(3)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+// ─── Insurance Carrier Database ───────────────────────────────────────────────
+
+model InsuranceCarrier {
+  id           String   @id @default(cuid())
+  name         String
+  shortName    String?
+  naic         String?  @unique   // NAIC company code
+  address      String?
+  city         String?
+  state        String?
+  zip          String?
+  phone        String?
+  fax          String?
+  email        String?
+  lossRunEmail String?            // Email specifically for loss run requests
+  website      String?
+  specialties  String[]           // e.g., ["trucking", "commercial_auto"]
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  carrierHistory  InsuranceHistory[]
+  requestCarriers RequestCarrier[]
+
+  @@index([name])
+  @@index([naic])
+}
+
+// ─── Loss Run Request ─────────────────────────────────────────────────────────
+
+model LossRunRequest {
+  id          String        @id @default(cuid())
+  requestNumber String      @unique @default(cuid())
+  status      RequestStatus @default(DRAFT)
+
+  // Who created it
+  agencyId    String
+  agency      Agency        @relation(fields: [agencyId], references: [id])
+  createdById String
+  createdBy   User          @relation(fields: [createdById], references: [id])
+
+  // Insured / Trucking Company Info (from FMCSA)
+  dotNumber   String
+  mcNumber    String?
+  companyName String
+  dba         String?
+  ownerName   String?
+  address     String?
+  city        String?
+  state       String?
+  zip         String?
+  phone       String?
+  fax         String?
+  email       String?
+  entityType  String?        // Corporation, LLC, etc.
+  operationType String?      // Common Carrier, Contract Carrier, etc.
+  totalTrucks Int?
+  totalDrivers Int?
+
+  // Request Details
+  yearsRequested Int         @default(5)
+  effectiveDate  DateTime?
+  expirationDate DateTime?
+  policyType     String?     // Auto Liability, General Liability, Cargo, etc.
+  notes          String?     @db.Text
+
+  // Signature
+  signatureStatus   SignatureStatus @default(PENDING)
+  signedAt          DateTime?
+  signatureDocUrl   String?
+  signatureProvider String?        // "docusign", "hellosign", "manual"
+  signatureEnvelopeId String?
+
+  // PDF
+  pdfUrl          String?
+  generatedAt     DateTime?
+
+  // Sending
+  sentToInsuredAt DateTime?
+  insuredEmail    String?
+  ccEmails        String[]   @default([])
+  sentToCarrierAt DateTime?
+
+  // Reminders
+  lastReminderSentAt DateTime?
+  reminderCount      Int        @default(0)
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  carriers    RequestCarrier[]
+  history     InsuranceHistory[]
+  timeline    RequestTimeline[]
+
+  @@index([agencyId])
+  @@index([dotNumber])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ─── Carrier selected on a request ───────────────────────────────────────────
+
+model RequestCarrier {
+  id                String           @id @default(cuid())
+  requestId         String
+  request           LossRunRequest   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  carrierId         String?
+  carrier           InsuranceCarrier? @relation(fields: [carrierId], references: [id])
+  carrierName       String           // Denormalized for flexibility
+  carrierEmail      String?
+  sentAt            DateTime?
+  responseReceivedAt DateTime?
+  status            String           @default("PENDING") // PENDING, SENT, RECEIVED
+  notes             String?
+
+  @@index([requestId])
+}
+
+// ─── FMCSA Insurance History ──────────────────────────────────────────────────
+
+model InsuranceHistory {
+  id           String           @id @default(cuid())
+  requestId    String?
+  request      LossRunRequest?  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  dotNumber    String
+  carrierId    String?
+  carrier      InsuranceCarrier? @relation(fields: [carrierId], references: [id])
+  carrierName  String
+  policyType   String           // AUTO_LIABILITY, CARGO, etc.
+  policyNumber String?
+  effectiveDate DateTime?
+  cancellationDate DateTime?
+  coverageAmount Decimal?       @db.Decimal(12, 2)
+  source       String           @default("FMCSA")
+  createdAt    DateTime         @default(now())
+
+  @@index([dotNumber])
+  @@index([requestId])
+}
+
+// ─── Request Timeline / Audit Log ─────────────────────────────────────────────
+
+model RequestTimeline {
+  id          String         @id @default(cuid())
+  requestId   String
+  request     LossRunRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  event       String
+  description String?
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+
+  @@index([requestId])
+}
+
+// ─── API Usage Tracking ───────────────────────────────────────────────────────
+
+model ApiUsage {
+  id        String   @id @default(cuid())
+  agencyId  String
+  agency    Agency   @relation(fields: [agencyId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  endpoint  String
+  dotNumber String?
+  cached    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([agencyId])
+  @@index([createdAt])
+}
+
