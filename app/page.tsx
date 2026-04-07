@@ -4,7 +4,7 @@ export default function LandingPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#ffffff', color: '#1a1a2e', fontFamily: "'Inter', system-ui, sans-serif" }}>
 
-      {/* ─── Nav ─────────────────────────────────────────────── */}
+      {/* âââ Nav âââââââââââââââââââââââââââââââââââââââââââââââ */}
       <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
         <div style={{ maxWidth: '1120px', margin: '0 auto', padding: '0 24px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontWeight: 900, fontSize: '18px', letterSpacing: '-0.5px', color: '#1a1a2e' }}>
@@ -28,7 +28,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* ─── Hero ────────────────────────────────────────────── */}
+      {/* âââ Hero ââââââââââââââââââââââââââââââââââââââââââââââ */}
       <section style={{ padding: '100px 24px 80px', textAlign: 'center', background: '#ffffff' }}>
         <div style={{ maxWidth: '760px', margin: '0 auto' }}>
           {/* badge */}
@@ -44,19 +44,19 @@ export default function LandingPage() {
           </h1>
 
           <p style={{ fontSize: 'clamp(16px, 2vw, 19px)', color: 'rgba(26,26,46,0.55)', lineHeight: 1.7, margin: '0 auto 44px', maxWidth: '540px' }}>
-            Enter a DOT# and LossRun360 pulls carrier info from FMCSA, generates a PDF, sends for e-signature, and submits to carriers — automatically.
+            Enter a DOT# and LossRun360 pulls carrier info from FMCSA, generates a PDF, sends for e-signature, and submits to carriers â automatically.
           </p>
 
           {/* CTAs */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', marginBottom: '16px' }}>
             <Link href="/register" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '13px 28px', background: '#1c6edd', color: '#fff', borderRadius: '10px', fontSize: '15px', fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 24px rgba(28,110,221,0.3)' }}>
-              Start 14-Day Free Trial →
+              Start 14-Day Free Trial â
             </Link>
             <Link href="/login" style={{ display: 'inline-flex', alignItems: 'center', padding: '13px 24px', background: 'rgba(26,26,46,0.05)', color: 'rgba(26,26,46,0.7)', borderRadius: '10px', fontSize: '15px', fontWeight: 500, textDecoration: 'none', border: '1px solid rgba(26,26,46,0.12)' }}>
               Sign in
             </Link>
           </div>
-          <p style={{ fontSize: '12px', color: 'rgba(26,26,46,0.35)' }}>No credit card required · Cancel anytime</p>
+          <p style={{ fontSize: '12px', color: 'rgba(26,26,46,0.35)' }}>No credit card required Â· Cancel anytime</p>
         </div>
 
         {/* App mockup */}
@@ -79,13 +79,13 @@ export default function LandingPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
               <div>
                 <div style={{ fontSize: '17px', fontWeight: 700, color: '#1a1a2e', letterSpacing: '-0.3px' }}>Loss Run Requests</div>
-                <div style={{ fontSize: '12px', color: 'rgba(26,26,46,0.45)', marginTop: '2px' }}>3 pending · 12 completed this month</div>
+                <div style={{ fontSize: '12px', color: 'rgba(26,26,46,0.45)', marginTop: '2px' }}>3 pending Â· 12 completed this month</div>
               </div>
               <div style={{ padding: '8px 16px', background: '#1c6edd', borderRadius: '8px', fontSize: '13px', fontWeight: 600, color: '#fff' }}>+ New Request</div>
             </div>
 
             {/* Stats row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+            <div className="mockup-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
               {[
                 { label: 'This Month', value: '12' },
                 { label: 'Pending', value: '3' },
@@ -101,7 +101,7 @@ export default function LandingPage() {
 
             {/* Table preview */}
             <div style={{ background: '#ffffff', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr', padding: '9px 14px', borderBottom: '1px solid rgba(0,0,0,0.06)', background: '#f8f9fa' }}>
+              <div className="mockup-table-head" style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr', padding: '9px 14px', borderBottom: '1px solid rgba(0,0,0,0.06)', background: '#f8f9fa' }}>
                 {['Insured', 'Carrier', 'Status', 'Date'].map((h) => (
                   <div key={h} style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(26,26,46,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</div>
                 ))}
@@ -111,7 +111,7 @@ export default function LandingPage() {
                 { insured: 'Blue Ridge Transport', carrier: 'Sentry Insurance', status: 'Pending', color: '#f59e0b' },
                 { insured: 'Summit Freight Co.', carrier: 'Canal Insurance', status: 'Sent', color: '#1c6edd' },
               ].map((r, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr', padding: '11px 14px', borderBottom: i < 2 ? '1px solid rgba(0,0,0,0.05)' : 'none', alignItems: 'center' }}>
+                <div key={i} className="mockup-table-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr', padding: '11px 14px', borderBottom: i < 2 ? '1px solid rgba(0,0,0,0.05)' : 'none', alignItems: 'center' }}>
                   <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(26,26,46,0.85)' }}>{r.insured}</div>
                   <div style={{ fontSize: '12px', color: 'rgba(26,26,46,0.5)' }}>{r.carrier}</div>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
@@ -126,14 +126,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Stats ───────────────────────────────────────────── */}
+      {/* âââ Stats âââââââââââââââââââââââââââââââââââââââââââââ */}
       <section style={{ borderTop: '1px solid rgba(0,0,0,0.06)', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '56px 24px', background: '#f7f8fa' }}>
-        <div style={{ maxWidth: '860px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '32px', textAlign: 'center' }}>
+        <div className="stats-grid" style={{ maxWidth: '860px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '32px', textAlign: 'center' }}>
           {[
             { value: '5 min', label: 'Average per request' },
             { value: '500+', label: 'Carriers in database' },
             { value: '98%', label: 'FMCSA accuracy' },
-            { value: '10×', label: 'Faster than manual' },
+            { value: '10Ã', label: 'Faster than manual' },
           ].map((s) => (
             <div key={s.label}>
               <div style={{ fontSize: '32px', fontWeight: 800, color: '#1a1a2e', letterSpacing: '-1.5px', marginBottom: '6px' }}>{s.value}</div>
@@ -143,7 +143,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Features ────────────────────────────────────────── */}
+      {/* âââ Features ââââââââââââââââââââââââââââââââââââââââââ */}
       <section id="features" style={{ padding: '100px 24px', background: '#ffffff' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '64px' }}>
@@ -158,12 +158,12 @@ export default function LandingPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1px', background: 'rgba(0,0,0,0.06)', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)' }}>
             {[
-              { icon: '🔍', title: 'Instant DOT# Lookup', desc: 'Enter a DOT number and get the full carrier profile pulled live from FMCSA in seconds.' },
-              { icon: '📋', title: '5-Year Insurance History', desc: 'Automatically retrieve 5 years of auto liability carrier history from FMCSA records.' },
-              { icon: '📄', title: 'PDF Generation', desc: 'Generate a branded, pre-filled loss run authorization PDF with a single click.' },
-              { icon: '✍️', title: 'E-Signature Workflow', desc: 'Send for digital signature. Once signed, it auto-forwards to every selected carrier.' },
-              { icon: '🏢', title: '500+ Carrier Database', desc: 'Pre-loaded with direct loss run contacts for every major trucking insurer.' },
-              { icon: '🔔', title: 'Automated Reminders', desc: 'LossRun360 follows up automatically until the insured signs — no chasing needed.' },
+              { icon: 'ð', title: 'Instant DOT# Lookup', desc: 'Enter a DOT number and get the full carrier profile pulled live from FMCSA in seconds.' },
+              { icon: 'ð', title: '5-Year Insurance History', desc: 'Automatically retrieve 5 years of auto liability carrier history from FMCSA records.' },
+              { icon: 'ð', title: 'PDF Generation', desc: 'Generate a branded, pre-filled loss run authorization PDF with a single click.' },
+              { icon: 'âï¸', title: 'E-Signature Workflow', desc: 'Send for digital signature. Once signed, it auto-forwards to every selected carrier.' },
+              { icon: 'ð¢', title: '500+ Carrier Database', desc: 'Pre-loaded with direct loss run contacts for every major trucking insurer.' },
+              { icon: 'ð', title: 'Automated Reminders', desc: 'LossRun360 follows up automatically until the insured signs â no chasing needed.' },
             ].map((f) => (
               <div key={f.title} style={{ background: '#ffffff', padding: '32px 28px' }}>
                 <div style={{ fontSize: '24px', marginBottom: '14px' }}>{f.icon}</div>
@@ -175,7 +175,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── How It Works ────────────────────────────────────── */}
+      {/* âââ How It Works ââââââââââââââââââââââââââââââââââââââ */}
       <section id="how-it-works" style={{ padding: '100px 24px', background: '#f7f8fa', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <div style={{ maxWidth: '680px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '64px' }}>
@@ -188,10 +188,10 @@ export default function LandingPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
             {[
-              { title: 'Enter a DOT# or company name', desc: 'Type the DOT number. LossRun360 hits FMCSA and returns the full carrier profile plus 5 years of insurance history — instantly.' },
+              { title: 'Enter a DOT# or company name', desc: 'Type the DOT number. LossRun360 hits FMCSA and returns the full carrier profile plus 5 years of insurance history â instantly.' },
               { title: 'Review and select carriers', desc: 'Confirm the pre-populated insured info, then choose which insurance carriers to request loss runs from.' },
               { title: 'Generate PDF and send for e-signature', desc: 'One click generates the authorization PDF and sends it to the insured. Automated reminders follow until signed.' },
-              { title: 'Signed — carriers notified automatically', desc: 'Once signed, LossRun360 emails every selected carrier with the signed authorization attached. Done.' },
+              { title: 'Signed â carriers notified automatically', desc: 'Once signed, LossRun360 emails every selected carrier with the signed authorization attached. Done.' },
             ].map((step, i) => (
               <div key={step.title} style={{ display: 'flex', gap: '20px', paddingBottom: i < 3 ? '36px' : '0', position: 'relative' }}>
                 {i < 3 && <div style={{ position: 'absolute', left: '19px', top: '48px', width: '1px', height: 'calc(100% - 48px)', background: 'rgba(0,0,0,0.1)' }} />}
@@ -206,7 +206,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Pricing ─────────────────────────────────────────── */}
+      {/* âââ Pricing âââââââââââââââââââââââââââââââââââââââââââ */}
       <section id="pricing" style={{ padding: '100px 24px', borderTop: '1px solid rgba(0,0,0,0.06)', background: '#ffffff' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '64px' }}>
@@ -219,8 +219,8 @@ export default function LandingPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', alignItems: 'start' }}>
             {[
-              { name: 'Starter', price: 79, desc: '25 requests/mo · 3 users', feats: ['25 requests/month', '3 team members', 'FMCSA DOT# lookup', 'PDF generation', 'Email support'], popular: false },
-              { name: 'Professional', price: 199, desc: '100 requests/mo · 10 users', feats: ['100 requests/month', '10 team members', 'Everything in Starter', 'E-signature workflow', 'Automated reminders', 'Priority support'], popular: true },
+              { name: 'Starter', price: 79, desc: '25 requests/mo Â· 3 users', feats: ['25 requests/month', '3 team members', 'FMCSA DOT# lookup', 'PDF generation', 'Email support'], popular: false },
+              { name: 'Professional', price: 199, desc: '100 requests/mo Â· 10 users', feats: ['100 requests/month', '10 team members', 'Everything in Starter', 'E-signature workflow', 'Automated reminders', 'Priority support'], popular: true },
               { name: 'Enterprise', price: 399, desc: 'Unlimited requests & users', feats: ['Unlimited requests', 'Unlimited users', 'Everything in Pro', 'Custom carrier lists', 'API access', 'Dedicated onboarding'], popular: false },
             ].map((plan) => (
               <div key={plan.name} style={{
@@ -270,23 +270,23 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── CTA Section ─────────────────────────────────────── */}
+      {/* âââ CTA Section âââââââââââââââââââââââââââââââââââââââ */}
       <section style={{ padding: '100px 24px', background: '#f0f7ff', borderTop: '1px solid rgba(28,110,221,0.12)', borderBottom: '1px solid rgba(28,110,221,0.12)', textAlign: 'center' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 800, color: '#1a1a2e', letterSpacing: '-1.5px', margin: '0 0 16px' }}>
             Ready to transform your agency?
           </h2>
           <p style={{ fontSize: '17px', color: 'rgba(26,26,46,0.55)', lineHeight: 1.7, marginBottom: '36px' }}>
-            Join agencies saving hours every week. Start your free trial — no credit card needed.
+            Join agencies saving hours every week. Start your free trial â no credit card needed.
           </p>
           <Link href="/register" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: '#1c6edd', color: '#fff', borderRadius: '10px', fontSize: '16px', fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 24px rgba(28,110,221,0.3)' }}>
-            Start Your Free Trial →
+            Start Your Free Trial â
           </Link>
-          <p style={{ fontSize: '12px', color: 'rgba(26,26,46,0.3)', marginTop: '16px' }}>No credit card required · Cancel anytime</p>
+          <p style={{ fontSize: '12px', color: 'rgba(26,26,46,0.3)', marginTop: '16px' }}>No credit card required Â· Cancel anytime</p>
         </div>
       </section>
 
-      {/* ─── Footer ──────────────────────────────────────────── */}
+      {/* âââ Footer ââââââââââââââââââââââââââââââââââââââââââââ */}
       <footer style={{ borderTop: '1px solid rgba(0,0,0,0.08)', padding: '32px 24px', background: '#1a1a2e' }}>
         <div style={{ maxWidth: '1120px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
           <span style={{ fontWeight: 900, fontSize: '16px', letterSpacing: '-0.5px', color: '#fff' }}>
@@ -307,7 +307,13 @@ export default function LandingPage() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         * { box-sizing: border-box; }
         @media (min-width: 768px) { .nav-links { display: flex !important; gap: 28px; } }
-        @media (max-width: 640px) { section { padding-left: 16px !important; padding-right: 16px !important; } }
+        @media (max-width: 640px) {
+          section { padding-left: 16px !important; padding-right: 16px !important; }
+          .mockup-stats { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+          .mockup-table-head, .mockup-table-row { grid-template-columns: 2fr 1.2fr 1fr !important; }
+          .mockup-table-head > div:nth-child(4), .mockup-table-row > div:nth-child(4) { display: none !important; }
+          .stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 24px 16px !important; }
+        }
       `}</style>
     </div>
   )
