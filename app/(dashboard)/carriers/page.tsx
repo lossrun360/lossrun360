@@ -86,7 +86,7 @@ export default async function CarriersPage({
               </tr>
             </thead>
             <tbody>
-              {carriers.map((carrier, i� => (
+              {carriers.map((carrier, i) => (
                 <tr key={carrier.id} style={{ borderBottom: i < carriers.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
                   {/* Carrier name column */}
                   <td style={{ padding: '13px 16px' }}>
@@ -124,7 +124,7 @@ export default async function CarriersPage({
                       <span style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>{carrier.phone}</span>
                     ) : (
                       <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>
-                    )}
+                   )}
                   </td>
                 </tr>
               ))}
