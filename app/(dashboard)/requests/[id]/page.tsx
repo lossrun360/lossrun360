@@ -219,14 +219,14 @@ export default function RequestDetailPage() {
               <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '16px', marginTop: 0 }}>FMCSA Insurance History</h2>
               <div>
                 {request.history.map((h, i) => (
-                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < request.history.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < request.history!.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
                     <div>
                       <p style={{ fontSize: '13px', fontWeight: '500', color: '#0f172a', margin: 0 }}>{h.carrierName}</p>
                       <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 0' }}>{h.policyType}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{formatDate(h.effectiveDate)} – {formatDate(h.cancellationDate)}</p>
-                      {h.coverageAmount && <p style={{ fontSize: '11px', color: '#059669', fontWeight: '500', margin: '2px 0 0' }}>NaN</p>}
+                      {h.coverageAmount && <p style={{ fontSize: '11px', color: '#059669', fontWeight: '500', margin: '2px 0 0' }}>${Number(h.coverageAmount).toLocaleString()}</p>}
                     </div>
                   </div>
                 ))}
