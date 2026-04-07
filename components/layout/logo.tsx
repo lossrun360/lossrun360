@@ -7,42 +7,46 @@ interface LogoProps {
   size?: 'sm' | 'md' | 'lg'
   href?: string
   className?: string
+  dark?: boolean
 }
 
-export function Logo({ size = 'md', href = '/', className }: LogoProps) {
+export function Logo({ size = 'md', href = '/', className, dark = true }: LogoProps) {
   const sizes = {
-    sm: 'text-lg',
-    md: 'text-xl',
-    lg: 'text-2xl',
+    sm: { fontSize: '15px' },
+    md: { fontSize: '18px' },
+    lg: { fontSize: '22px' },
   }
 
-  const content = (
-    <span className={cn('font-black tracking-tight text-white', sizes[size], className)}>
-      LossRun<span className="text-primary">360</span>
+  const style = {
+    fontWeight: 900,
+    letterSpacing: '-0.5px',
+    color: dark ? '#ffffff' : '#0f172a',
+    fontFamily: "'Inter', system-ui, sans-serif",
+    fontSize: sizes[size].fontSize,
+    textDecoration: 'none',
+  }
+
+  const text = (
+    <span style={style}>
+      LossRun<span style={{ color: '#1c6edd' }}>360</span>
     </span>
   )
 
   if (href) {
     return (
-      <Link href={href} className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-        <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M2 7L5.5 10.5L12 3.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-        {content}
+      <Link
+        href={href}
+        className={cn('flex items-center hover:opacity-90 transition-opacity', className)}
+        style={{ textDecoration: 'none' }}
+      >
+        {text}
       </Link>
     )
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M2 7L5.5 10.5L12 3.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
-      {content}
+    <div className={cn('flex items-center', className)}>
+      {text}
     </div>
   )
 }
