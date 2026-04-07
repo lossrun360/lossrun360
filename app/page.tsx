@@ -21,7 +21,7 @@ export default function LandingPage() {
             <Link href="/login" style={{ fontSize: '14px', fontWeight: 500, color: 'rgba(26,26,46,0.65)', textDecoration: 'none', padding: '7px 14px' }}>
               Sign in
             </Link>
-            <Link href="/register" style={{ fontSize: '14px', fontWeight: 600, color: '#fff', textDecoration: 'none', padding: '8px 18px', borderRadius: '8px', background: '#1c6edd' }}>
+            <Link href="/register" style={{ fontSize: '14px', fontWeight: 600, color: '#fff', textDecoration: 'none', padding: '8px 18px', borderRadius: '4px', background: '#1c6edd' }}>
               Get started free
             </Link>
           </div>
@@ -49,10 +49,10 @@ export default function LandingPage() {
 
           {/* CTAs */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', marginBottom: '16px' }}>
-            <Link href="/register" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '13px 28px', background: '#1c6edd', color: '#fff', borderRadius: '10px', fontSize: '15px', fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 24px rgba(28,110,221,0.3)' }}>
+            <Link href="/register" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '13px 28px', background: '#1c6edd', color: '#fff', borderRadius: '4px', fontSize: '15px', fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 24px rgba(28,110,221,0.3)' }}>
               Start 14-Day Free Trial →
             </Link>
-            <Link href="/login" style={{ display: 'inline-flex', alignItems: 'center', padding: '13px 24px', background: 'rgba(26,26,46,0.05)', color: 'rgba(26,26,46,0.7)', borderRadius: '10px', fontSize: '15px', fontWeight: 500, textDecoration: 'none', border: '1px solid rgba(26,26,46,0.12)' }}>
+            <Link href="/login" style={{ display: 'inline-flex', alignItems: 'center', padding: '13px 24px', background: 'rgba(26,26,46,0.05)', color: 'rgba(26,26,46,0.7)', borderRadius: '4px', fontSize: '15px', fontWeight: 500, textDecoration: 'none', border: '1px solid rgba(26,26,46,0.12)' }}>
               Sign in
             </Link>
           </div>
@@ -60,7 +60,7 @@ export default function LandingPage() {
         </div>
 
         {/* App mockup */}
-        <div style={{ maxWidth: '900px', margin: '64px auto 0', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 20px 80px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)', background: '#ffffff' }}>
+        <div style={{ maxWidth: '900px', margin: '64px auto 0', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 20px 80px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)', background: '#ffffff' }}>
           {/* Fake browser bar */}
           <div style={{ background: '#f1f3f5', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
             <div style={{ display: 'flex', gap: '6px' }}>
@@ -68,11 +68,10 @@ export default function LandingPage() {
               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b', opacity: 0.7 }} />
               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', opacity: 0.7 }} />
             </div>
-            <div style={{ flex: 1, background: '#ffffff', borderRadius: '5px', height: '22px', display: 'flex', alignItems: 'center', paddingLeft: '10px', border: '1px solid rgba(0,0,0,0.06)' }}>
+            <div style={{ flex: 1, background: '#ffffff', borderRadius: '3px', height: '22px', display: 'flex', alignItems: 'center', paddingLeft: '10px', border: '1px solid rgba(0,0,0,0.06)' }}>
               <span style={{ fontSize: '11px', color: 'rgba(26,26,46,0.4)' }}>app.lossrun360.com/requests</span>
             </div>
           </div>
-
           {/* App UI preview */}
           <div style={{ padding: '24px', minHeight: '280px', background: '#fafbfc' }}>
             {/* Top row */}
@@ -81,7 +80,7 @@ export default function LandingPage() {
                 <div style={{ fontSize: '17px', fontWeight: 700, color: '#1a1a2e', letterSpacing: '-0.3px' }}>Loss Run Requests</div>
                 <div style={{ fontSize: '12px', color: 'rgba(26,26,46,0.45)', marginTop: '2px' }}>3 pending · 12 completed this month</div>
               </div>
-              <div style={{ padding: '8px 16px', background: '#1c6edd', borderRadius: '8px', fontSize: '13px', fontWeight: 600, color: '#fff' }}>+ New Request</div>
+              <div style={{ padding: '8px 16px', background: '#1c6edd', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#fff' }}>+ New Request</div>
             </div>
 
             {/* Stats row */}
@@ -92,7 +91,7 @@ export default function LandingPage() {
                 { label: 'Avg. Turnaround', value: '4.2h' },
                 { label: 'Carriers Hit', value: '48' },
               ].map((s) => (
-                <div key={s.label} style={{ background: '#ffffff', borderRadius: '8px', padding: '12px 14px', border: '1px solid rgba(0,0,0,0.08)' }}>
+                <div key={s.label} style={{ background: '#ffffff', borderRadius: '4px', padding: '12px 14px', border: '1px solid rgba(0,0,0,0.08)' }}>
                   <div style={{ fontSize: '11px', color: 'rgba(26,26,46,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>{s.label}</div>
                   <div style={{ fontSize: '22px', fontWeight: 700, color: '#1a1a2e', letterSpacing: '-0.5px' }}>{s.value}</div>
                 </div>
@@ -100,7 +99,7 @@ export default function LandingPage() {
             </div>
 
             {/* Table preview */}
-            <div style={{ background: '#ffffff', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+            <div style={{ background: '#ffffff', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.08)', overflow: 'hidden' }}>
               <div className="mockup-table-head" style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr', padding: '9px 14px', borderBottom: '1px solid rgba(0,0,0,0.06)', background: '#f8f9fa' }}>
                 {['Insured', 'Carrier', 'Status', 'Date'].map((h) => (
                   <div key={h} style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(26,26,46,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</div>
@@ -156,7 +155,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1px', background: 'rgba(0,0,0,0.06)', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1px', background: 'rgba(0,0,0,0.06)', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)' }}>
             {[
               { icon: '🔍', title: 'Instant DOT# Lookup', desc: 'Enter a DOT number and get the full carrier profile pulled live from FMCSA in seconds.' },
               { icon: '📋', title: '5-Year Insurance History', desc: 'Automatically retrieve 5 years of auto liability carrier history from FMCSA records.' },
@@ -226,7 +225,7 @@ export default function LandingPage() {
               <div key={plan.name} style={{
                 background: plan.popular ? '#f0f7ff' : '#ffffff',
                 border: plan.popular ? '2px solid #1c6edd' : '1px solid rgba(0,0,0,0.1)',
-                borderRadius: '16px',
+                borderRadius: '4px',
                 padding: '28px',
                 position: 'relative',
                 boxShadow: plan.popular ? '0 8px 40px rgba(28,110,221,0.12)' : '0 2px 12px rgba(0,0,0,0.04)'
@@ -235,8 +234,7 @@ export default function LandingPage() {
                   <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: '#1c6edd', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '3px 14px', borderRadius: '999px', whiteSpace: 'nowrap' }}>Most Popular</div>
                 )}
                 <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#1a1a2e', margin: '0 0 6px' }}>{plan.name}</h3>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '42px', fontWeight: 800, color: '#1a1a2e', letterSpacing: '-2px' }}>${plan.price}</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '6px' }}>                  <span style={{ fontSize: '42px', fontWeight: 800, color: '#1a1a2e', letterSpacing: '-2px' }}>${plan.price}</span>
                   <span style={{ fontSize: '14px', color: 'rgba(26,26,46,0.4)' }}>/mo</span>
                 </div>
                 <p style={{ fontSize: '13px', color: 'rgba(26,26,46,0.5)', marginBottom: '22px' }}>{plan.desc}</p>
@@ -254,7 +252,7 @@ export default function LandingPage() {
                   display: 'block',
                   textAlign: 'center',
                   padding: '11px',
-                  borderRadius: '9px',
+                  borderRadius: '4px',
                   fontSize: '14px',
                   fontWeight: 600,
                   textDecoration: 'none',
@@ -279,7 +277,7 @@ export default function LandingPage() {
           <p style={{ fontSize: '17px', color: 'rgba(26,26,46,0.55)', lineHeight: 1.7, marginBottom: '36px' }}>
             Join agencies saving hours every week. Start your free trial — no credit card needed.
           </p>
-          <Link href="/register" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: '#1c6edd', color: '#fff', borderRadius: '10px', fontSize: '16px', fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 24px rgba(28,110,221,0.3)' }}>
+          <Link href="/register" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: '#1c6edd', color: '#fff', borderRadius: '4px', fontSize: '16px', fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 24px rgba(28,110,221,0.3)' }}>
             Start Your Free Trial →
           </Link>
           <p style={{ fontSize: '12px', color: 'rgba(26,26,46,0.3)', marginTop: '16px' }}>No credit card required · Cancel anytime</p>
