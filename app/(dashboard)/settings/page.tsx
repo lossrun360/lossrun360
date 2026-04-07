@@ -9,6 +9,11 @@ export default function SettingsPage() {
   const { data: session, update } = useSession()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  const [editingAgency, setEditingAgency] = useState(false)
+  const [editingProfile, setEditingProfile] = useState(false)
+  const [editingPassword, setEditingPassword] = useState(false)
+
   const [agencyForm, setAgencyForm] = useState({
     name: '', phone: '', address: '', city: '', state: '', zip: '', website: '', licenseNumber: '',
   })
@@ -44,12 +49,13 @@ export default function SettingsPage() {
     setSaving(true)
     try {
       const res = await fetch('/api/settings/agency', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(agencyForm),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(agencyForm),
       })
       if (!res.ok) { toast.error('Failed to save'); return }
       toast.success('Agency settings saved')
-    } catch { toast.error('Failed') } finally { setSaving(false) }
+      setEditingAgency(false)
+    } catch { toast.error('Failed') }
+    finally { setSaving(false) }
   }
 
   async function saveProfile(e: React.FormEvent) {
@@ -57,13 +63,14 @@ export default function SettingsPage() {
     setSaving(true)
     try {
       const res = await fetch('/api/settings/profile', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profileForm),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profileForm),
       })
       if (!res.ok) { toast.error('Failed to save'); return }
       await update({ name: profileForm.name })
       toast.success('Profile updated')
-    } catch { toast.error('Failed') } finally { setSaving(false) }
+      setEditingProfile(false)
+    } catch { toast.error('Failed') }
+    finally { setSaving(false) }
   }
 
   async function changePassword(e: React.FormEvent) {
@@ -79,7 +86,9 @@ export default function SettingsPage() {
       if (!res.ok) { toast.error(data.error || 'Failed'); return }
       toast.success('Password changed')
       setPasswordForm({ current: '', newPass: '', confirm: '' })
-    } catch { toast.error('Failed') } finally { setSaving(false) }
+      setEditingPassword(false)
+    } catch { toast.error('Failed') }
+    finally { setSaving(false) }
   }
 
   async function startCheckout(tier: string) {
@@ -93,7 +102,8 @@ export default function SettingsPage() {
       const data = await res.json()
       if (data.url) window.location.href = data.url
       else toast.error(data.error || 'Failed to start checkout')
-    } catch { toast.error('Failed') } finally { setCheckoutLoading(null) }
+    } catch { toast.error('Failed') }
+    finally { setCheckoutLoading(null) }
   }
 
   async function openPortal() {
@@ -103,7 +113,8 @@ export default function SettingsPage() {
       const data = await res.json()
       if (data.url) window.location.href = data.url
       else toast.error(data.error || 'Failed')
-    } catch { toast.error('Failed') } finally { setPortalLoading(false) }
+    } catch { toast.error('Failed') }
+    finally { setPortalLoading(false) }
   }
 
   const isAdmin = session?.user?.role === 'AGENCY_ADMIN' || session?.user?.role === 'SUPER_ADMIN'
@@ -115,6 +126,7 @@ export default function SettingsPage() {
   const lbl: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: 500, color: '#64748b', marginBottom: '4px' }
   const btnP: React.CSSProperties = { padding: '8px 16px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }
   const btnS: React.CSSProperties = { padding: '8px 16px', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }
+  const btnEdit: React.CSSProperties = { padding: '5px 12px', background: 'transparent', color: '#6366f1', border: '1px solid #6366f1', borderRadius: '6px', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }
 
   if (loading) return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '32px 40px' }}>
@@ -130,89 +142,143 @@ export default function SettingsPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
+        {/* Agency Settings */}
         {isAdmin && (
           <div style={card}>
-            <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '16px', marginTop: 0 }}>Agency Settings</h2>
-            <form onSubmit={saveAgency}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={lbl}>Agency Name</label>
-                  <input style={inp} value={agencyForm.name} onChange={(e) => setAgencyForm(p => ({...p, name: e.target.value}))} required />
-                </div>
-                <div>
-                  <label style={lbl}>Phone</label>
-                  <input style={inp} value={agencyForm.phone} onChange={(e) => setAgencyForm(p => ({...p, phone: e.target.value}))} />
-                </div>
-                <div>
-                  <label style={lbl}>License Number</label>
-                  <input style={inp} value={agencyForm.licenseNumber} onChange={(e) => setAgencyForm(p => ({...p, licenseNumber: e.target.value}))} />
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={lbl}>Street Address</label>
-                  <input style={inp} value={agencyForm.address} onChange={(e) => setAgencyForm(p => ({...p, address: e.target.value}))} />
-                </div>
-                <div>
-                  <label style={lbl}>City</label>
-                  <input style={inp} value={agencyForm.city} onChange={(e) => setAgencyForm(p => ({...p, city: e.target.value}))} />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div>
-                    <label style={lbl}>State</label>
-                    <input style={inp} value={agencyForm.state} maxLength={2} onChange={(e) => setAgencyForm(p => ({...p, state: e.target.value}))} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', margin: 0 }}>Agency Settings</h2>
+              {!editingAgency && (
+                <button onClick={() => setEditingAgency(true)} style={btnEdit}>Edit</button>
+              )}
+            </div>
+            {editingAgency ? (
+              <form onSubmit={saveAgency}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={lbl}>Agency Name</label>
+                    <input style={inp} value={agencyForm.name} onChange={(e) => setAgencyForm(p => ({...p, name: e.target.value}))} required />
                   </div>
                   <div>
-                    <label style={lbl}>ZIP</label>
-                    <input style={inp} value={agencyForm.zip} onChange={(e) => setAgencyForm(p => ({...p, zip: e.target.value}))} />
+                    <label style={lbl}>Phone</label>
+                    <input style={inp} value={agencyForm.phone} onChange={(e) => setAgencyForm(p => ({...p, phone: e.target.value}))} />
+                  </div>
+                  <div>
+                    <label style={lbl}>License Number</label>
+                    <input style={inp} value={agencyForm.licenseNumber} onChange={(e) => setAgencyForm(p => ({...p, licenseNumber: e.target.value}))} />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={lbl}>Street Address</label>
+                    <input style={inp} value={agencyForm.address} onChange={(e) => setAgencyForm(p => ({...p, address: e.target.value}))} />
+                  </div>
+                  <div>
+                    <label style={lbl}>City</label>
+                    <input style={inp} value={agencyForm.city} onChange={(e) => setAgencyForm(p => ({...p, city: e.target.value}))} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <label style={lbl}>State</label>
+                      <input style={inp} value={agencyForm.state} maxLength={2} onChange={(e) => setAgencyForm(p => ({...p, state: e.target.value}))} />
+                    </div>
+                    <div>
+                      <label style={lbl}>ZIP</label>
+                      <input style={inp} value={agencyForm.zip} onChange={(e) => setAgencyForm(p => ({...p, zip: e.target.value}))} />
+                    </div>
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={lbl}>Website</label>
+                    <input style={inp} type="url" value={agencyForm.website} onChange={(e) => setAgencyForm(p => ({...p, website: e.target.value}))} placeholder="https://..." />
                   </div>
                 </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={lbl}>Website</label>
-                  <input style={inp} type="url" value={agencyForm.website} onChange={(e) => setAgencyForm(p => ({...p, website: e.target.value}))} placeholder="https://..." />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" style={btnP} disabled={saving}>{saving ? 'Saving...' : 'Save Agency Settings'}</button>
+                  <button type="button" style={btnS} onClick={() => setEditingAgency(false)}>Cancel</button>
                 </div>
+              </form>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <ReadOnlyField label="Agency Name" value={agencyForm.name} wide />
+                <ReadOnlyField label="Phone" value={agencyForm.phone} />
+                <ReadOnlyField label="License Number" value={agencyForm.licenseNumber} />
+                <ReadOnlyField label="Address" value={[agencyForm.address, agencyForm.city, agencyForm.state, agencyForm.zip].filter(Boolean).join(', ')} wide />
+                <ReadOnlyField label="Website" value={agencyForm.website} wide />
               </div>
-              <button type="submit" style={btnP} disabled={saving}>{saving ? 'Saving...' : 'Save Agency Settings'}</button>
-            </form>
+            )}
           </div>
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Profile */}
           <div style={card}>
-            <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '16px', marginTop: 0 }}>Your Profile</h2>
-            <form onSubmit={saveProfile}>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={lbl}>Display Name</label>
-                <input style={inp} value={profileForm.name} onChange={(e) => setProfileForm(p => ({...p, name: e.target.value}))} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', margin: 0 }}>Your Profile</h2>
+              {!editingProfile && (
+                <button onClick={() => setEditingProfile(true)} style={btnEdit}>Edit</button>
+              )}
+            </div>
+            {editingProfile ? (
+              <form onSubmit={saveProfile}>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={lbl}>Display Name</label>
+                  <input style={inp} value={profileForm.name} onChange={(e) => setProfileForm(p => ({...p, name: e.target.value}))} />
+                </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={lbl}>Email</label>
+                  <input style={{ ...inp, opacity: 0.6 }} type="email" value={profileForm.email} disabled />
+                  <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px', marginBottom: 0 }}>Contact support to change your email.</p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" style={btnP} disabled={saving}>{saving ? 'Saving...' : 'Save Profile'}</button>
+                  <button type="button" style={btnS} onClick={() => setEditingProfile(false)}>Cancel</button>
+                </div>
+              </form>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <ReadOnlyField label="Display Name" value={profileForm.name} />
+                <ReadOnlyField label="Email" value={profileForm.email} />
               </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={lbl}>Email</label>
-                <input style={{ ...inp, opacity: 0.6 }} type="email" value={profileForm.email} disabled />
-                <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px', marginBottom: 0 }}>Contact support to change your email.</p>
-              </div>
-              <button type="submit" style={btnP} disabled={saving}>{saving ? 'Saving...' : 'Save Profile'}</button>
-            </form>
+            )}
           </div>
 
+          {/* Password */}
           <div style={card}>
-            <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '16px', marginTop: 0 }}>Change Password</h2>
-            <form onSubmit={changePassword}>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={lbl}>Current Password</label>
-                <input style={inp} type="password" value={passwordForm.current} onChange={(e) => setPasswordForm(p => ({...p, current: e.target.value}))} required />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', margin: 0 }}>Change Password</h2>
+              {!editingPassword && (
+                <button onClick={() => setEditingPassword(true)} style={btnEdit}>Edit</button>
+              )}
+            </div>
+            {editingPassword ? (
+              <form onSubmit={changePassword}>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={lbl}>Current Password</label>
+                  <input style={inp} type="password" value={passwordForm.current} onChange={(e) => setPasswordForm(p => ({...p, current: e.target.value}))} required />
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={lbl}>New Password</label>
+                  <input style={inp} type="password" value={passwordForm.newPass} onChange={(e) => setPasswordForm(p => ({...p, newPass: e.target.value}))} required minLength={8} />
+                </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={lbl}>Confirm New Password</label>
+                  <input style={inp} type="password" value={passwordForm.confirm} onChange={(e) => setPasswordForm(p => ({...p, confirm: e.target.value}))} required />
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" style={btnP} disabled={saving}>{saving ? 'Changing...' : 'Change Password'}</button>
+                  <button type="button" style={btnS} onClick={() => setEditingPassword(false)}>Cancel</button>
+                </div>
+              </form>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div>
+                  <p style={{ fontSize: '12px', fontWeight: 500, color: '#64748b', margin: '0 0 2px' }}>Password</p>
+                  <p style={{ fontSize: '16px', color: '#94a3b8', margin: 0, letterSpacing: '2px' }}>••••••••</p>
+                </div>
               </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={lbl}>New Password</label>
-                <input style={inp} type="password" value={passwordForm.newPass} onChange={(e) => setPasswordForm(p => ({...p, newPass: e.target.value}))} required minLength={8} />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={lbl}>Confirm New Password</label>
-                <input style={inp} type="password" value={passwordForm.confirm} onChange={(e) => setPasswordForm(p => ({...p, confirm: e.target.value}))} required />
-              </div>
-              <button type="submit" style={btnP} disabled={saving}>{saving ? 'Changing...' : 'Change Password'}</button>
-            </form>
+            )}
           </div>
         </div>
       </div>
 
+      {/* Billing */}
       <div style={{ ...card }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', margin: 0 }}>Billing & Subscription</h2>
@@ -222,7 +288,6 @@ export default function SettingsPage() {
             </button>
           )}
         </div>
-
         {!billingLoading && subscription && (
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ flex: 1 }}>
@@ -252,7 +317,6 @@ export default function SettingsPage() {
             )}
           </div>
         )}
-
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
           {Object.values(PLANS).map((plan) => {
             const isCurrent = currentTier === plan.tier && isActive
@@ -287,11 +351,7 @@ export default function SettingsPage() {
                 {isCurrent ? (
                   <div style={{ ...btnS, textAlign: 'center', opacity: 0.7, cursor: 'default' }}>Current Plan ✓</div>
                 ) : (
-                  <button
-                    onClick={() => startCheckout(plan.tier)}
-                    disabled={!!checkoutLoading}
-                    style={{ padding: '8px 16px', background: isPopular ? '#6366f1' : '#f1f5f9', color: isPopular ? '#fff' : '#475569', border: isPopular ? 'none' : '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'center' }}
-                  >
+                  <button onClick={() => startCheckout(plan.tier)} disabled={!!checkoutLoading} style={{ padding: '8px 16px', background: isPopular ? '#6366f1' : '#f1f5f9', color: isPopular ? '#fff' : '#475569', border: isPopular ? 'none' : '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'center' }}>
                     {checkoutLoading === plan.tier ? 'Loading...' : 'Select Plan'}
                   </button>
                 )}
@@ -303,6 +363,15 @@ export default function SettingsPage() {
           All plans include a 14-day free trial. Cancel anytime. Prices are per agency per month. Secure billing powered by Stripe.
         </p>
       </div>
+    </div>
+  )
+}
+
+function ReadOnlyField({ label, value, wide }: { label: string; value?: string; wide?: boolean }) {
+  return (
+    <div style={wide ? { gridColumn: '1 / -1' } : {}}>
+      <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.4px', textTransform: 'uppercase', color: '#94a3b8', margin: '0 0 3px' }}>{label}</p>
+      <p style={{ fontSize: '13px', color: '#0f172a', margin: 0 }}>{value || <span style={{ color: '#cbd5e1' }}>—</span>}</p>
     </div>
   )
 }
