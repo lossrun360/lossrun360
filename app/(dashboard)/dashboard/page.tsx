@@ -1,277 +1,236 @@
 import { getServerSession } from 'next-auth'
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { Header } from '@/components/layout/header'
-import { STATUS_LABELS, STATUS_COLORS, formatDate, timeAgo } from '@/lib/utils'
-import { startOfMonth } from 'date-fns'
-
-export const metadata = { title: 'Dashboard' }
+import Link from 'next/link'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
-  if (!session) redirect('/login')
+  const agencyId = (session?.user as any)?.agencyId
 
-  const agencyId = session.user.agencyId
+  const [totalRequests, awaitingSignature, sentToCarriers, completedThisMonth] = await Promise.all([
+    prisma.lossRunRequest.count({ where: { agencyId } }),
+    prisma.lossRunRequest.count({ where: { agencyId, status: 'AWAITING_SIGNATURE' } }),
+    prisma.lossRunRequest.count({ where: { agencyId, status: 'SENT_TO_CARRIER' } }),
+    prisma.lossRunRequest.count({
+      where: {
+        agencyId,
+        status: 'COMPLETED',
+        updatedAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+      },
+    }),
+  ])
 
-  // Fetch stats
-  const [totalRequests, pendingSignature, sentToCarrier, completedThisMonth, recentRequests, subscription] =
-    await Promise.all([
-      prisma.lossRunRequest.count({ where: { agencyId } }),
-      prisma.lossRunRequest.count({ where: { agencyId, status: 'PENDING_SIGNATURE' } }),
-      prisma.lossRunRequest.count({ where: { agencyId, status: 'SENT_TO_CARRIER' } }),
-      prisma.lossRunRequest.count({
-        where: { agencyId, status: 'COMPLETED', createdAt: { gte: startOfMonth(new Date()) } },
-      }),
-      prisma.lossRunRequest.findMany({
-        where: { agencyId },
-        orderBy: { createdAt: 'desc' },
-        take: 8,
-        include: { createdBy: { select: { name: true } }, carriers: true },
-      }),
-      prisma.subscription.findUnique({ where: { agencyId } }),
-    ])
+  const recentRequests = await prisma.lossRunRequest.findMany({
+    where: { agencyId },
+    orderBy: { createdAt: 'desc' },
+    take: 8,
+    include: { carriers: true, createdBy: true },
+  })
 
-  const stats = [
+  const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+    DRAFT:             { label: 'Draft',             color: '#92400e', bg: '#fef3c7' },
+    AWAITING_SIGNATURE:{ label: 'Awaiting Signature',color: '#1e40af', bg: '#dbeafe' },
+    SIGNED:            { label: 'Signed',            color: '#065f46', bg: '#d1fae5' },
+    SENT_TO_CARRIER:   { label: 'Sent to Carrier',   color: '#6b21a8', bg: '#f3e8ff' },
+    COMPLETED:         { label: 'Completed',         color: '#065f46', bg: '#d1fae5' },
+    CANCELLED:         { label: 'Cancelled',         color: '#991b1b', bg: '#fee2e2' },
+  }
+
+  function timeAgo(date: Date) {
+    const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
+    if (s < 60) return 'just now'
+    if (s < 3600) return Math.floor(s / 60) + 'm ago'
+    if (s < 86400) return Math.floor(s / 3600) + 'h ago'
+    return Math.floor(s / 86400) + 'd ago'
+  }
+
+  const metrics = [
     {
       label: 'Total Requests',
       value: totalRequests,
       icon: (
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M3 2h11l4 4v13H3V2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-          <path d="M14 2v4h4M6 10h8M6 13h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
         </svg>
       ),
-      color: 'text-primary',
-      bg: 'bg-primary/10',
+      iconBg: '#eef2ff',
     },
     {
       label: 'Awaiting Signature',
-      value: pendingSignature,
+      value: awaitingSignature,
       icon: (
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M5 15l3-1 8-8a1.41 1.41 0 00-2-2l-8 8-1 3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-          <path d="M5 18h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
       ),
-      color: 'text-yellow-400',
-      bg: 'bg-yellow-500/10',
+      iconBg: '#fef3c7',
     },
     {
       label: 'Sent to Carriers',
-      value: sentToCarrier,
+      value: sentToCarriers,
       icon: (
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M2 4l8 5 8-5M2 4v12h16V4M2 4h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
         </svg>
       ),
-      color: 'text-purple-400',
-      bg: 'bg-purple-500/10',
+      iconBg: '#dbeafe',
     },
     {
       label: 'Completed This Month',
       value: completedThisMonth,
       icon: (
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M6.5 10l2.5 2.5L13.5 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
         </svg>
       ),
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-500/10',
+      iconBg: '#d1fae5',
     },
   ]
 
-  // Trial warning
-  const trialEndsAt = subscription?.trialEndAt
-  const isTrialing = subscription?.status === 'TRIALING'
-  const daysLeft = trialEndsAt
-    ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : 0
-
   return (
-    <div>
-      <Header title="Dashboard" subtitle={session.user.agencyName} />
+    <div style={{ padding: '32px', maxWidth: '1200px', margin: '0 auto' }}>
 
-      <div className="p-6 space-y-6">
-        {/* Trial banner */}
-        {isTrialing && daysLeft <= 7 && (
-          <div className="flex items-center justify-between gap-4 px-5 py-3.5 rounded-xl bg-accent/10 border border-accent/20">
-            <div className="flex items-center gap-3">
-              <svg width="20" height="20" className="text-accent shrink-0" viewBox="0 0 20 20" fill="none">
-                <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M10 6v4M10 13.5v.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-              <p className="text-sm font-medium text-text-primary">
-                Your free trial ends in{' '}
-                <span className="text-accent font-bold">{daysLeft} day{daysLeft !== 1 ? 's' : ''}</span>.
-                Upgrade to keep access to all features.
-              </p>
+      {/* Header */}
+      <div style={{ marginBottom: '28px' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.4px', margin: 0 }}>
+          Dashboard
+        </h1>
+        <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>
+          {(session?.user as any)?.agencyName || 'Your agency'} · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+        </p>
+      </div>
+
+      {/* Metric cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
+        {metrics.map((m) => (
+          <div key={m.label} style={{
+            background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px',
+            padding: '20px 22px', boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: '600', letterSpacing: '0.4px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '8px' }}>
+                  {m.label}
+                </div>
+                <div style={{ fontSize: '30px', fontWeight: '700', color: '#0f172a', letterSpacing: '-1px', lineHeight: 1 }}>
+                  {m.value}
+                </div>
+              </div>
+              <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: m.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {m.icon}
+              </div>
             </div>
-            <Link href="/billing" className="btn-secondary btn-sm btn shrink-0">
-              Upgrade Now
+          </div>
+        ))}
+      </div>
+
+      {/* Main grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '20px' }}>
+
+        {/* Recent requests table */}
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.06)' }}>
+          <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', margin: 0 }}>Recent Requests</h2>
+            <Link href="/requests" style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none', fontWeight: '500' }}>
+              View all →
             </Link>
           </div>
-        )}
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="stat-card">
-              <div className="flex items-center justify-between mb-2">
-                <span className="stat-label">{stat.label}</span>
-                <div className={`w-9 h-9 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center`}>
-                  {stat.icon}
-                </div>
+          {recentRequests.length === 0 ? (
+            <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               </div>
-              <div className="stat-value">{stat.value}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Main content */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Recent Requests */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-bold text-text-primary">Recent Requests</h2>
-              <Link href="/requests" className="text-sm text-primary hover:text-primary-light transition-colors">
-                View all →
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', margin: '0 0 4px' }}>No requests yet</p>
+              <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 16px' }}>Create your first loss run request to get started.</p>
+              <Link href="/requests/new" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '7px 14px', background: '#6366f1', color: '#fff', borderRadius: '6px', fontSize: '13px', fontWeight: '500', textDecoration: 'none' }}>
+                + New Request
               </Link>
             </div>
-
-            {recentRequests.length === 0 ? (
-              <div className="card">
-                <div className="empty-state">
-                  <svg className="empty-state-icon w-12 h-12" viewBox="0 0 48 48" fill="none">
-                    <path d="M8 6h24l10 10v30H8V6z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-                    <path d="M32 6v10h10M16 22h16M16 28h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                  <p className="empty-state-title">No requests yet</p>
-                  <p className="empty-state-desc">Start by looking up a DOT# to create your first request.</p>
-                  <Link href="/requests/new" className="btn-primary btn">
-                    Create First Request
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <div className="card overflow-hidden">
-                <table className="w-full">
-                  <thead>
-                    <tr>
-                      <th>Company</th>
-                      <th>DOT#</th>
-                      <th>Status</th>
-                      <th>Carriers</th>
-                      <th>Created</th>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc' }}>
+                  {['Company', 'DOT#', 'Status', 'Carriers', 'Created'].map(h => (
+                    <th key={h} style={{ padding: '9px 16px', textAlign: 'left', fontSize: '10.5px', fontWeight: '600', letterSpacing: '0.4px', textTransform: 'uppercase', color: '#94a3b8', borderBottom: '1px solid #e2e8f0' }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {recentRequests.map((req, i) => {
+                  const s = statusConfig[req.status] || { label: req.status, color: '#475569', bg: '#f1f5f9' }
+                  return (
+                    <tr key={req.id} style={{ borderBottom: i < recentRequests.length - 1 ? '1px solid #f1f5f9' : 'none', transition: 'background 0.08s' }}>
+                      <td style={{ padding: '12px 16px' }}>
+                        <Link href={'/requests/' + req.id} style={{ textDecoration: 'none' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '500', color: '#0f172a' }}>{req.companyName}</div>
+                        </Link>
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: '12px', color: '#64748b', fontFamily: 'monospace' }}>{req.dotNumber}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '500', background: s.bg, color: s.color }}>
+                          {s.label}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: '13px', color: '#64748b' }}>{req.carriers.length}</td>
+                      <td style={{ padding: '12px 16px', fontSize: '12px', color: '#94a3b8' }}>{timeAgo(req.createdAt)}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {recentRequests.map((req) => (
-                      <tr key={req.id}>
-                        <td>
-                          <Link href={`/requests/${req.id}`} className="font-medium text-text-primary hover:text-primary transition-colors">
-                            {req.companyName}
-                          </Link>
-                          {req.createdBy?.name && (
-                            <p className="text-xs text-text-muted">{req.createdBy.name}</p>
-                          )}
-                        </td>
-                        <td className="font-mono text-xs text-text-secondary">{req.dotNumber}</td>
-                        <td>
-                          <span className={`badge ${STATUS_COLORS[req.status]}`}>
-                            {STATUS_LABELS[req.status]}
-                          </span>
-                        </td>
-                        <td className="text-text-secondary">{req.carriers.length}</td>
-                        <td className="text-text-secondary text-xs">{timeAgo(req.createdAt)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Right panel */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {/* Quick actions */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.06)' }}>
+            <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid #f1f5f9' }}>
+              <h2 style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', margin: 0 }}>Quick Actions</h2>
+            </div>
+            <div style={{ padding: '8px' }}>
+              {[
+                { href: '/requests/new', label: 'New Request', desc: 'Lookup DOT# and start', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>, iconBg: '#eef2ff' },
+                { href: '/requests?status=AWAITING_SIGNATURE', label: 'Pending Signatures', desc: awaitingSignature + ' awaiting', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, iconBg: '#fef3c7' },
+                { href: '/carriers', label: 'Carrier Database', desc: 'Browse 500+ carriers', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>, iconBg: '#d1fae5' },
+              ].map((a) => (
+                <Link key={a.href} href={a.href} style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: '9px 10px', borderRadius: '8px', textDecoration: 'none',
+                  transition: 'background 0.1s',
+                }}>
+                  <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: a.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {a.icon}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: '500', color: '#0f172a' }}>{a.label}</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>{a.desc}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
 
-          {/* Quick Actions + Subscription */}
-          <div className="space-y-4">
-            {/* Quick actions */}
-            <div>
-              <h2 className="text-base font-bold text-text-primary mb-3">Quick Actions</h2>
-              <div className="space-y-2">
-                <Link
-                  href="/requests/new"
-                  className="flex items-center gap-3 p-4 card-hover rounded-xl hover:border-primary/30 transition-all"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-text-primary">New Request</p>
-                    <p className="text-xs text-text-muted">Lookup a DOT# and start</p>
-                  </div>
-                </Link>
-
-                <Link
-                  href="/requests?status=PENDING_SIGNATURE"
-                  className="flex items-center gap-3 p-4 card-hover rounded-xl hover:border-yellow-500/30 transition-all"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-yellow-500/10 text-yellow-400 flex items-center justify-center shrink-0">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <path d="M4 14l3-1 9-9a1.41 1.41 0 00-2-2l-9 9-1 3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-text-primary">Pending Signatures</p>
-                    <p className="text-xs text-text-muted">
-                      {pendingSignature} request{pendingSignature !== 1 ? 's' : ''} awaiting
-                    </p>
-                  </div>
-                </Link>
-
-                <Link
-                  href="/carriers"
-                  className="flex items-center gap-3 p-4 card-hover rounded-xl hover:border-border-2 transition-all"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-surface-3 text-text-secondary flex items-center justify-center shrink-0">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <path d="M2 5l8-3 8 3v4c0 5-3.5 9-8 10.5C5.5 18 2 14 2 9V5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-text-primary">Carrier Database</p>
-                    <p className="text-xs text-text-muted">Browse 500+ carriers</p>
-                  </div>
-                </Link>
-              </div>
+          {/* Subscription */}
+          <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px', boxShadow: '0 1px 3px rgba(15,23,42,0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <span style={{ fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Subscription</span>
+              <span style={{ fontSize: '10px', fontWeight: '600', padding: '2px 7px', background: 'rgba(99,102,241,0.25)', color: '#a5b4fc', borderRadius: '999px' }}>Trial</span>
             </div>
-
-            {/* Subscription card */}
-            {subscription && (
-              <div className="card p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-text-primary">Subscription</h3>
-                  <span className={`badge ${subscription.status === 'ACTIVE' || subscription.status === 'TRIALING' ? 'badge-green' : 'badge-yellow'}`}>
-                    {subscription.status === 'TRIALING' ? 'Trial' : subscription.status}
-                  </span>
-                </div>
-                <p className="text-2xl font-black text-text-primary mb-0.5">{subscription.planTier}</p>
-                <p className="text-xs text-text-muted mb-3">
-                  {subscription.requestsPerMonth >= 999999
-                    ? 'Unlimited requests'
-                    : `${subscription.requestsPerMonth} requests/month`}
-                </p>
-                {trialEndsAt && isTrialing && (
-                  <p className="text-xs text-accent mb-3">Trial ends {formatDate(trialEndsAt)}</p>
-                )}
-                <Link href="/billing" className="btn-secondary btn-sm btn w-full">
-                  Manage Billing
-                </Link>
-              </div>
-            )}
+            <div style={{ fontSize: '17px', fontWeight: '700', color: '#fff', letterSpacing: '-0.3px', marginBottom: '3px' }}>Professional</div>
+            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '14px' }}>100 requests / month</div>
+            <Link href="/billing" style={{
+              display: 'block', textAlign: 'center', padding: '8px', borderRadius: '8px',
+              background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)',
+              fontSize: '12px', fontWeight: '500', textDecoration: 'none',
+              border: '1px solid rgba(255,255,255,0.08)', transition: 'background 0.1s',
+            }}>
+              Manage Billing
+            </Link>
           </div>
         </div>
       </div>
