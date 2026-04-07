@@ -28,7 +28,7 @@ const badge = (color: string, bg: string, text: string) => (
   <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '500', background: bg, color, whiteSpace: 'nowrap' }}>{text}</span>
 )
 
-const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 1px 2px rgba(15,23,42,0.05)' }
+const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', boxShadow: '0 1px 2px rgba(15,23,42,0.05)' }
 
 export default function RequestDetailPage() {
   const params = useParams()
@@ -92,7 +92,7 @@ export default function RequestDetailPage() {
     return (
       <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
         {[...Array(4)].map((_, i) => (
-          <div key={i} style={{ height: '96px', background: '#f1f5f9', borderRadius: '8px', marginBottom: '16px', animation: 'pulse 1.5s infinite' }} />
+          <div key={i} style={{ height: '96px', background: '#f1f5f9', borderRadius: '4px', marginBottom: '16px', animation: 'pulse 1.5s infinite' }} />
         ))}
       </div>
     )
@@ -103,7 +103,7 @@ export default function RequestDetailPage() {
       <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
         <div style={{ ...card, padding: '48px', textAlign: 'center' }}>
           <p style={{ fontSize: '15px', fontWeight: '600', color: '#0f172a', marginBottom: '12px' }}>Request not found</p>
-          <Link href="/requests" style={{ display: 'inline-block', padding: '8px 16px', background: '#6366f1', color: '#fff', borderRadius: '6px', textDecoration: 'none', fontSize: '13px' }}>Back to Dashboard</Link>
+          <Link href="/requests" style={{ display: 'inline-block', padding: '8px 16px', background: '#6366f1', color: '#fff', borderRadius: '3px', textDecoration: 'none', fontSize: '13px' }}>Back to Dashboard</Link>
         </div>
       </div>
     )
@@ -114,7 +114,7 @@ export default function RequestDetailPage() {
   const canSendToCarrier = request.status === 'SIGNED'
   const canRemind = request.status === 'PENDING_SIGNATURE'
 
-  const btnBase = { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+  const btnBase = { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '3px', fontSize: '13px', fontWeight: '500', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
   const btnSecondary = { ...btnBase, background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0' }
   const btnPrimary = { ...btnBase, background: '#6366f1', color: '#fff' }
   const btnDanger = { ...btnBase, background: '#fee2e2', color: '#991b1b', width: '100%', justifyContent: 'center' }
@@ -123,7 +123,7 @@ export default function RequestDetailPage() {
     <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <Link href="/requests" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', borderRadius: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b', textDecoration: 'none', flexShrink: 0 }}>
+        <Link href="/requests" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', borderRadius: '3px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b', textDecoration: 'none', flexShrink: 0 }}>
           <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
             <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
