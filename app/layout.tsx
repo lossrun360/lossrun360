@@ -41,7 +41,7 @@ export default function RootLayout({
               background: '#161b22',
               color: '#e6edf3',
               border: '1px solid #21262d',
-              borderRadius: '10px',
+              borderRadius: '4px',
               fontSize: '14px',
             },
             success: {
