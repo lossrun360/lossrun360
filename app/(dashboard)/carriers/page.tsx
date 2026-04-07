@@ -78,7 +78,7 @@ export default async function CarriersPage({
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc' }}>
-                {['Carrier', 'NAIC', 'Loss Run Email', 'Phone'].map((h) => (
+                {['Carrier', 'Contact'].map((h) => (
                   <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', color: '#94a3b8', borderBottom: '1px solid #e2e8f0' }}>
                     {h}
                   </th>
@@ -88,26 +88,30 @@ export default async function CarriersPage({
             <tbody>
               {carriers.map((carrier, i) => (
                 <tr key={carrier.id} style={{ borderBottom: i < carriers.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                  {/* Carrier name + short name + NAIC stacked */}
                   <td style={{ padding: '13px 16px' }}>
                     <div style={{ fontSize: '13px', fontWeight: 500, color: '#0f172a' }}>{carrier.name}</div>
                     {carrier.shortName && (
                       <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>{carrier.shortName}</div>
                     )}
+                    {carrier.naic && (
+                      <div style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace', marginTop: '2px' }}>
+                        NAIC {carrier.naic}
+                      </div>
+                    )}
                   </td>
-                  <td style={{ padding: '13px 16px', fontSize: '12px', color: '#64748b', fontFamily: 'monospace' }}>
-                    {carrier.naic || <span style={{ color: '#cbd5e1' }}>—</span>}
-                  </td>
+                  {/* Email + phone stacked */}
                   <td style={{ padding: '13px 16px' }}>
                     {carrier.lossRunEmail ? (
-                      <a href={'mailto:' + carrier.lossRunEmail} style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none', display: 'block', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <a href={'mailto:' + carrier.lossRunEmail} style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none', display: 'block', maxWidth: '320px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {carrier.lossRunEmail}
                       </a>
                     ) : (
-                      <span style={{ color: '#cbd5e1', fontSize: '13px' }}>—</span>
+                      <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>
                     )}
-                  </td>
-                  <td style={{ padding: '13px 16px', fontSize: '13px', color: '#64748b' }}>
-                    {carrier.phone || <span style={{ color: '#cbd5e1' }}>—</span>}
+                    {carrier.phone && (
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '3px' }}>{carrier.phone}</div>
+                    )}
                   </td>
                 </tr>
               ))}
