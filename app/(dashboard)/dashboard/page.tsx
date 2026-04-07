@@ -9,7 +9,7 @@ export default async function DashboardPage() {
 
   const [totalRequests, awaitingSignature, sentToCarriers, completedThisMonth] = await Promise.all([
     prisma.lossRunRequest.count({ where: { agencyId } }),
-    prisma.lossRunRequest.count({ where: { agencyId, status: 'AWAITING_SIGNATURE' } }),
+    prisma.lossRunRequest.count({ where: { agencyId, status: 'PENDING_SIGNATURE' } }),
     prisma.lossRunRequest.count({ where: { agencyId, status: 'SENT_TO_CARRIER' } }),
     prisma.lossRunRequest.count({
       where: {
@@ -28,12 +28,12 @@ export default async function DashboardPage() {
   })
 
   const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-    DRAFT:             { label: 'Draft',             color: '#92400e', bg: '#fef3c7' },
-    AWAITING_SIGNATURE:{ label: 'Awaiting Signature',color: '#1e40af', bg: '#dbeafe' },
-    SIGNED:            { label: 'Signed',            color: '#065f46', bg: '#d1fae5' },
-    SENT_TO_CARRIER:   { label: 'Sent to Carrier',   color: '#6b21a8', bg: '#f3e8ff' },
-    COMPLETED:         { label: 'Completed',         color: '#065f46', bg: '#d1fae5' },
-    CANCELLED:         { label: 'Cancelled',         color: '#991b1b', bg: '#fee2e2' },
+    DRAFT: { label: 'Draft', color: '#92400e', bg: '#fef3c7' },
+    PENDING_SIGNATURE: { label: 'Awaiting Signature', color: '#1e40af', bg: '#dbeafe' },
+    SIGNED: { label: 'Signed', color: '#065f46', bg: '#d1fae5' },
+    SENT_TO_CARRIER: { label: 'Sent to Carrier', color: '#6b21a8', bg: '#f3e8ff' },
+    COMPLETED: { label: 'Completed', color: '#065f46', bg: '#d1fae5' },
+    CANCELLED: { label: 'Cancelled', color: '#991b1b', bg: '#fee2e2' },
   }
 
   function timeAgo(date: Date) {
@@ -89,24 +89,30 @@ export default async function DashboardPage() {
 
   return (
     <div style={{ padding: '32px', maxWidth: '1200px', margin: '0 auto' }}>
-
       {/* Header */}
       <div style={{ marginBottom: '28px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.4px', margin: 0 }}>
           Dashboard
         </h1>
         <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>
-          {(session?.user as any)?.agencyName || 'Your agency'} · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          {(session?.user as any)?.agencyName || 'Your agency'} &middot;{' '}
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
         </p>
       </div>
 
       {/* Metric cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
         {metrics.map((m) => (
-          <div key={m.label} style={{
-            background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px',
-            padding: '20px 22px', boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
-          }}>
+          <div
+            key={m.label}
+            style={{
+              background: '#fff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '20px 22px',
+              boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: '11px', fontWeight: '600', letterSpacing: '0.4px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '8px' }}>
@@ -126,16 +132,14 @@ export default async function DashboardPage() {
 
       {/* Main grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '20px' }}>
-
         {/* Recent requests table */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.06)' }}>
           <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h2 style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', margin: 0 }}>Recent Requests</h2>
             <Link href="/requests" style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none', fontWeight: '500' }}>
-              View all →
+              View all &rarr;
             </Link>
           </div>
-
           {recentRequests.length === 0 ? (
             <div style={{ padding: '48px 24px', textAlign: 'center' }}>
               <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
@@ -186,7 +190,6 @@ export default async function DashboardPage() {
 
         {/* Right panel */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
           {/* Quick actions */}
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.06)' }}>
             <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid #f1f5f9' }}>
@@ -194,15 +197,33 @@ export default async function DashboardPage() {
             </div>
             <div style={{ padding: '8px' }}>
               {[
-                { href: '/requests/new', label: 'New Request', desc: 'Lookup DOT# and start', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>, iconBg: '#eef2ff' },
-                { href: '/requests?status=AWAITING_SIGNATURE', label: 'Pending Signatures', desc: awaitingSignature + ' awaiting', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, iconBg: '#fef3c7' },
-                { href: '/carriers', label: 'Carrier Database', desc: 'Browse 500+ carriers', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>, iconBg: '#d1fae5' },
+                {
+                  href: '/requests/new',
+                  label: 'New Request',
+                  desc: 'Lookup DOT# and start',
+                  icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+                  iconBg: '#eef2ff',
+                },
+                {
+                  href: '/requests?status=PENDING_SIGNATURE',
+                  label: 'Pending Signatures',
+                  desc: awaitingSignature + ' awaiting',
+                  icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+                  iconBg: '#fef3c7',
+                },
+                {
+                  href: '/carriers',
+                  label: 'Carrier Database',
+                  desc: 'Browse 500+ carriers',
+                  icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>,
+                  iconBg: '#d1fae5',
+                },
               ].map((a) => (
-                <Link key={a.href} href={a.href} style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '9px 10px', borderRadius: '8px', textDecoration: 'none',
-                  transition: 'background 0.1s',
-                }}>
+                <Link
+                  key={a.href}
+                  href={a.href}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '8px', textDecoration: 'none', transition: 'background 0.1s' }}
+                >
                   <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: a.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {a.icon}
                   </div>
@@ -223,12 +244,10 @@ export default async function DashboardPage() {
             </div>
             <div style={{ fontSize: '17px', fontWeight: '700', color: '#fff', letterSpacing: '-0.3px', marginBottom: '3px' }}>Professional</div>
             <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '14px' }}>100 requests / month</div>
-            <Link href="/billing" style={{
-              display: 'block', textAlign: 'center', padding: '8px', borderRadius: '8px',
-              background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)',
-              fontSize: '12px', fontWeight: '500', textDecoration: 'none',
-              border: '1px solid rgba(255,255,255,0.08)', transition: 'background 0.1s',
-            }}>
+            <Link
+              href="/billing"
+              style={{ display: 'block', textAlign: 'center', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', fontSize: '12px', fontWeight: '500', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.08)', transition: 'background 0.1s' }}
+            >
               Manage Billing
             </Link>
           </div>
