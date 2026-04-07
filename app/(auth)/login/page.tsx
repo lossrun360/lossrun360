@@ -35,168 +35,174 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#F4F7FC' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', background: '#f8fafc' }}>
       {/* Left branding panel */}
       <div
-        className="hidden lg:flex lg:w-5/12 flex-col justify-between p-12"
-        style={{ background: '#1654D9' }}
+        style={{
+          display: 'none',
+          width: '42%',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '48px',
+          background: '#0f172a',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+        className="login-panel"
       >
-        <div>
-          <div className="flex items-center gap-3">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.2)' }}
-            >
+        {/* Subtle grid pattern */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+
+        <div style={{ position: 'relative' }}>
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '64px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-                <path d="M3 2h7l4 4v8H3V2z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
-                <path d="M10 2v4h4M5 8h6M5 11h4" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M3 2h7l4 4v8H3V2z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
+                <path d="M10 2v4h4M5 8h6M5 11h4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
             </div>
-            <span className="text-white font-bold text-lg tracking-tight">
-              LossRun<span style={{ color: '#FFB347' }}>360</span>
+            <span style={{ color: '#fff', fontWeight: '700', fontSize: '17px', letterSpacing: '-0.3px' }}>
+              LossRun<span style={{ color: '#818cf8' }}>360</span>
             </span>
           </div>
-          <div className="mt-16">
-            <h2 className="text-4xl font-bold text-white leading-tight">
-              Loss run requests,<br />done in minutes.
-            </h2>
-            <p className="mt-4 text-base" style={{ color: 'rgba(255,255,255,0.72)' }}>
-              The professional platform built for commercial trucking insurance agencies.
-            </p>
-          </div>
-          <div className="mt-10 space-y-4">
+
+          <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#fff', lineHeight: 1.2, letterSpacing: '-0.8px', marginBottom: '16px' }}>
+            Loss run requests,<br />done in minutes.
+          </h2>
+          <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: '40px' }}>
+            The professional platform built for commercial trucking insurance agencies.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {[
               'Automated carrier outreach',
               'E-signature built in',
               'FMCSA DOT# lookup',
               '500+ carrier database',
             ].map((feat) => (
-              <div key={feat} className="flex items-center gap-3">
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: 'rgba(255,255,255,0.2)' }}
-                >
+              <div key={feat} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '20px', height: '20px', borderRadius: '6px', background: 'rgba(99,102,241,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M2 5l2 2 4-4" stroke="#818cf8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <span className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                  {feat}
-                </span>
+                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontWeight: '500' }}>{feat}</span>
               </div>
             ))}
           </div>
         </div>
-        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+
+        <p style={{ position: 'relative', fontSize: '12px', color: 'rgba(255,255,255,0.25)' }}>
           &copy; {new Date().getFullYear()} LossRun360. All rights reserved.
         </p>
       </div>
 
       {/* Right login panel */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-        <div className="lg:hidden mb-10 flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: '#1654D9' }}
-          >
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px' }}>
+        {/* Mobile logo */}
+        <div style={{ marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-              <path d="M3 2h7l4 4v8H3V2z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
-              <path d="M10 2v4h4M5 8h6M5 11h4" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M3 2h7l4 4v8H3V2z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
+              <path d="M10 2v4h4M5 8h6M5 11h4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </div>
-          <span className="font-bold text-base" style={{ color: '#0D1C38' }}>
-            LossRun<span style={{ color: '#E8691A' }}>360</span>
+          <span style={{ fontWeight: '700', fontSize: '16px', color: '#0f172a', letterSpacing: '-0.3px' }}>
+            LossRun<span style={{ color: '#6366f1' }}>360</span>
           </span>
         </div>
 
-        <div className="w-full max-w-sm">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold" style={{ color: '#0D1C38' }}>Welcome back</h1>
-            <p className="mt-1.5 text-sm" style={{ color: '#64748B' }}>Sign in to your agency account</p>
+        <div style={{ width: '100%', maxWidth: '380px' }}>
+          <div style={{ marginBottom: '28px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.5px', margin: 0 }}>Welcome back</h1>
+            <p style={{ fontSize: '14px', color: '#64748b', marginTop: '6px' }}>Sign in to your agency account</p>
           </div>
 
-          <div
-            className="bg-white rounded-2xl p-8"
-            style={{ boxShadow: '0 2px 16px rgba(14,28,62,0.10), 0 0 0 1px rgba(14,28,62,0.06)' }}
-          >
-            <form onSubmit={handleSubmit} className="space-y-5">
+          <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', border: '1px solid #e2e8f0', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }} htmlFor="email">
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }} htmlFor="email">
                   Email address
                 </label>
                 <input
                   id="email"
                   type="email"
-                  className="w-full rounded-lg px-3.5 py-2.5 text-sm transition-colors"
-                  style={{ border: '1px solid #D1D9E6', color: '#0D1C38', outline: 'none', background: '#FAFBFD' }}
                   placeholder="you@agency.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
                   autoFocus
-                  onFocus={e => { e.currentTarget.style.border = '1px solid #1654D9'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,84,217,0.12)' }}
-                  onBlur={e => { e.currentTarget.style.border = '1px solid #D1D9E6'; e.currentTarget.style.boxShadow = 'none' }}
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', color: '#0f172a', background: '#f8fafc', outline: 'none', boxSizing: 'border-box' }}
+                  onFocus={(e) => { e.currentTarget.style.border = '1px solid #6366f1'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)' }}
+                  onBlur={(e) => { e.currentTarget.style.border = '1px solid #e2e8f0'; e.currentTarget.style.boxShadow = 'none' }}
                 />
               </div>
+
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-sm font-medium" style={{ color: '#374151' }} htmlFor="password">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '500', color: '#374151' }} htmlFor="password">
                     Password
                   </label>
-                  <Link href="/forgot-password" className="text-xs font-medium" style={{ color: '#1654D9' }}>
+                  <Link href="/forgot-password" style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none', fontWeight: '500' }}>
                     Forgot password?
                   </Link>
                 </div>
                 <input
                   id="password"
                   type="password"
-                  className="w-full rounded-lg px-3.5 py-2.5 text-sm transition-colors"
-                  style={{ border: '1px solid #D1D9E6', color: '#0D1C38', outline: 'none', background: '#FAFBFD' }}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  onFocus={e => { e.currentTarget.style.border = '1px solid #1654D9'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,84,217,0.12)' }}
-                  onBlur={e => { e.currentTarget.style.border = '1px solid #D1D9E6'; e.currentTarget.style.boxShadow = 'none' }}
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', color: '#0f172a', background: '#f8fafc', outline: 'none', boxSizing: 'border-box' }}
+                  onFocus={(e) => { e.currentTarget.style.border = '1px solid #6366f1'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)' }}
+                  onBlur={(e) => { e.currentTarget.style.border = '1px solid #e2e8f0'; e.currentTarget.style.boxShadow = 'none' }}
                 />
               </div>
+
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-all shadow-sm mt-1"
-                style={{ background: loading ? '#6B96E8' : '#1654D9' }}
-                onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#1244BB' }}
-                onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#1654D9' }}
+                style={{ width: '100%', padding: '10px', borderRadius: '8px', background: loading ? '#a5b4fc' : '#6366f1', color: '#fff', fontSize: '14px', fontWeight: '600', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.15s', boxShadow: '0 1px 3px rgba(99,102,241,0.3)' }}
+                onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#4f46e5' }}
+                onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = '#6366f1' }}
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? 'Signing in...' : 'Sign in'}
               </button>
             </form>
-            <div className="mt-6 pt-5" style={{ borderTop: '1px solid #EEF2F8' }}>
-              <p className="text-xs text-center mb-3" style={{ color: '#94A3B8' }}>Try the demo account</p>
+
+            <div style={{ marginTop: '20px', paddingTop: '18px', borderTop: '1px solid #f1f5f9' }}>
+              <p style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Demo account</p>
               <button
                 type="button"
                 onClick={() => { setEmail('demo@apexinsurance.com'); setPassword('Demo@123!') }}
-                className="w-full px-3 py-2.5 rounded-lg text-xs text-left"
-                style={{ background: '#F8FAFD', border: '1px solid #E2E8F0', color: '#475569' }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#EEF2FA')}
-                onMouseLeave={e => (e.currentTarget.style.background = '#F8FAFD')}
+                style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: '12px', color: '#475569', cursor: 'pointer', textAlign: 'left', transition: 'background 0.1s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9' }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#f8fafc' }}
               >
-                <span className="font-semibold" style={{ color: '#0D1C38' }}>demo@apexinsurance.com</span>
+                <span style={{ fontWeight: '600', color: '#0f172a' }}>demo@apexinsurance.com</span>
                 {' · '}Demo@123!
               </button>
             </div>
           </div>
 
-          <p className="text-center text-sm mt-6" style={{ color: '#64748B' }}>
+          <p style={{ textAlign: 'center', fontSize: '13px', color: '#64748b', marginTop: '20px' }}>
             Don&apos;t have an account?{' '}
-            <Link href="/register" className="font-semibold" style={{ color: '#1654D9' }}>
+            <Link href="/register" style={{ color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
               Start free trial
             </Link>
           </p>
         </div>
       </div>
+
+      <style>{`
+        @media (min-width: 1024px) {
+          .login-panel { display: flex !important; }
+        }
+      `}</style>
     </div>
   )
 }
