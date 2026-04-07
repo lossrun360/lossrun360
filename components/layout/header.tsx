@@ -1,7 +1,6 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import Link from 'next/link'
 
 interface HeaderProps {
   title?: string
@@ -14,65 +13,108 @@ export function Header({ title, subtitle, actions }: HeaderProps) {
 
   return (
     <header
-      className="h-12 bg-white sticky top-0 z-10 flex items-center px-5 gap-3"
-      style={{ borderBottom: '1px solid #E2E8F0' }}
+      className="sticky top-0 z-10 flex items-center px-6 gap-4"
+      style={{
+        background: '#ffffff',
+        borderBottom: '1px solid rgba(19,0,50,0.15)',
+        height: '56px',
+      }}
     >
-      {/* Page title */}
+      {/* Page title / breadcrumb */}
       <div className="flex-1 min-w-0">
         {title && (
-          <div className="flex items-center gap-2">
-            <h1 className="text-base font-semibold truncate" style={{ color: '#0D1C38' }}>
+          <div className="flex items-baseline gap-2">
+            <h1
+              className="truncate"
+              style={{
+                fontSize: '15px',
+                fontWeight: 600,
+                color: '#130032',
+                letterSpacing: '-0.2px',
+              }}
+            >
               {title}
             </h1>
             {subtitle && (
-              <span className="text-sm" style={{ color: '#94A3B8' }}>
-                — {subtitle}
+              <span
+                style={{ fontSize: '13px', color: 'rgba(19,0,50,0.5)' }}
+              >
+                {subtitle}
               </span>
             )}
           </div>
         )}
       </div>
 
-      {/* Right actions */}
+      {/* Right side */}
       <div className="flex items-center gap-2">
         {actions}
 
-        {/* Agency pill */}
+        {/* Agency badge */}
         {session?.user?.agencyName && (
           <div
-            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
-            style={{ background: '#F0F4FF', color: '#1654D9', border: '1px solid #C7D8FA' }}
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+            style={{
+              background: 'rgba(76,0,255,0.08)',
+              color: '#4c00ff',
+              border: '1px solid rgba(76,0,255,0.2)',
+              fontSize: '11px',
+              fontWeight: 500,
+            }}
           >
             <span
               className="w-1.5 h-1.5 rounded-full shrink-0"
-              style={{ background: '#1654D9' }}
+              style={{ background: '#4c00ff' }}
             />
-            <span className="truncate max-w-[160px]">{session.user.agencyName}</span>
+            <span className="truncate max-w-[160px]">
+              {session.user.agencyName}
+            </span>
           </div>
         )}
 
-        {/* Notifications */}
+        {/* Bell icon */}
         <button
-          className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors relative"
-          style={{ color: '#64748B' }}
+          className="flex items-center justify-center rounded-md transition-colors"
+          style={{
+            width: '32px',
+            height: '32px',
+            color: 'rgba(19,0,50,0.4)',
+            background: 'transparent',
+          }}
           title="Notifications"
         >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
             <path
               d="M9 1.5A5.5 5.5 0 003.5 7v2.5l-1.5 2.5h15l-1.5-2.5V7A5.5 5.5 0 009 1.5z"
-              stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
-            <path d="M7 13.5a2 2 0 004 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <path
+              d="M7 13.5a2 2 0 004 0"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+            />
           </svg>
         </button>
 
         {/* Avatar */}
         <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white cursor-pointer"
-          style={{ background: '#1654D9' }}
+          className="flex items-center justify-center rounded-full text-white cursor-pointer shrink-0"
+          style={{
+            width: '32px',
+            height: '32px',
+            background: '#4c00ff',
+            fontSize: '13px',
+            fontWeight: 600,
+          }}
           title={session?.user?.name || session?.user?.email || ''}
         >
-          {(session?.user?.name || session?.user?.email || 'U').charAt(0).toUpperCase()}
+          {(session?.user?.name || session?.user?.email || 'U')
+            .charAt(0)
+            .toUpperCase()}
         </div>
       </div>
     </header>
