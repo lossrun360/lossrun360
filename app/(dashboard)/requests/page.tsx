@@ -2,17 +2,16 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import { RequestStatus } from '@prisma/client'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  DRAFT:              { label: 'Draft',              color: '#92400e', bg: '#fef3c7' },
-  AWAITING_SIGNATURE: { label: 'Awaiting Signature', color: '#1e40af', bg: '#dbeafe' },
-  SIGNED:             { label: 'Signed',             color: '#065f46', bg: '#d1fae5' },
-  SENT_TO_CARRIER:    { label: 'Sent to Carrier',    color: '#6b21a8', bg: '#f3e8ff' },
-  COMPLETED:          { label: 'Completed',          color: '#065f46', bg: '#d1fae5' },
-  CANCELLED:          { label: 'Cancelled',          color: '#991b1b', bg: '#fee2e2' },
+  DRAFT:            { label: 'Draft',              color: '#92400e', bg: '#fef3c7' },
+  PENDING_SIGNATURE:{ label: 'Awaiting Signature', color: '#1e40af', bg: '#dbeafe' },
+  SIGNED:           { label: 'Signed',             color: '#065f46', bg: '#d1fae5' },
+  SENT_TO_CARRIER:  { label: 'Sent to Carrier',    color: '#6b21a8', bg: '#f3e8ff' },
+  COMPLETED:        { label: 'Completed',          color: '#065f46', bg: '#d1fae5' },
+  CANCELLED:        { label: 'Cancelled',          color: '#991b1b', bg: '#fee2e2' },
 }
-
-const STATUSES = ['All', 'Draft', 'Awaiting Signature', 'Signed', 'Sent to Carrier', 'Completed', 'Cancelled']
 
 function timeAgo(date: Date) {
   const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
@@ -29,51 +28,46 @@ export default async function RequestsPage({
 }) {
   const session = await getServerSession(authOptions)
   const agencyId = (session?.user as any)?.agencyId
-
   const statusFilter = searchParams.status
   const query = searchParams.q
 
   const requests = await prisma.lossRunRequest.findMany({
     where: {
       agencyId,
-      ...(statusFilter && statusFilter !== 'ALL' ? { status: statusFilter } : {}),
-      ...(query ? {
-        OR: [
-          { companyName: { contains: query, mode: 'insensitive' } },
-          { dotNumber: { contains: query, mode: 'insensitive' } },
-        ],
-      } : {}),
+      ...(statusFilter && statusFilter !== 'ALL'
+        ? { status: statusFilter as RequestStatus }
+        : {}),
+      ...(query
+        ? {
+            OR: [
+              { companyName: { contains: query, mode: 'insensitive' } },
+              { dotNumber: { contains: query, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
     },
     orderBy: { createdAt: 'desc' },
     include: { carriers: true, createdBy: true },
   })
 
-  const statusCounts: Record<string, number> = { ALL: requests.length }
-  for (const r of requests) {
-    statusCounts[r.status] = (statusCounts[r.status] || 0) + 1
-  }
-
   return (
     <div style={{ padding: '32px', maxWidth: '1200px', margin: '0 auto' }}>
-
       {/* Page header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.4px', margin: 0 }}>Loss Run Requests</h1>
           <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>{requests.length} total request{requests.length !== 1 ? 's' : ''}</p>
         </div>
-        <Link href="/requests/new" style={{
-          display: 'inline-flex', alignItems: 'center', gap: '6px',
-          padding: '8px 16px', background: '#6366f1', color: '#fff',
-          borderRadius: '8px', fontSize: '13px', fontWeight: '500', textDecoration: 'none',
-          boxShadow: '0 1px 3px rgba(99,102,241,0.3)',
-        }}>
+        <Link
+          href="/requests/new"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#6366f1', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: '500', textDecoration: 'none', boxShadow: '0 1px 3px rgba(99,102,241,0.3)' }}
+        >
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1V12M1 6.5H12" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>
           New Request
         </Link>
       </div>
 
-      {/* Filters */}
+      {/* Filters + Table card */}
       <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.05)' }}>
         <div style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {/* Search */}
@@ -98,24 +92,21 @@ export default async function RequestsPage({
           {/* Status tabs */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
             {[
-              { value: '', label: 'All' },
-              { value: 'DRAFT', label: 'Draft' },
-              { value: 'AWAITING_SIGNATURE', label: 'Awaiting Sig.' },
-              { value: 'SIGNED', label: 'Signed' },
-              { value: 'SENT_TO_CARRIER', label: 'Sent' },
-              { value: 'COMPLETED', label: 'Completed' },
-              { value: 'CANCELLED', label: 'Cancelled' },
+              { value: '',                  label: 'All' },
+              { value: 'DRAFT',             label: 'Draft' },
+              { value: 'PENDING_SIGNATURE', label: 'Awaiting Sig.' },
+              { value: 'SIGNED',            label: 'Signed' },
+              { value: 'SENT_TO_CARRIER',   label: 'Sent' },
+              { value: 'COMPLETED',         label: 'Completed' },
+              { value: 'CANCELLED',         label: 'Cancelled' },
             ].map((tab) => {
               const isActive = (statusFilter || '') === tab.value
               return (
-                <a key={tab.value} href={tab.value ? '?status=' + tab.value : '/requests'} style={{
-                  padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '500',
-                  textDecoration: 'none',
-                  background: isActive ? '#6366f1' : 'transparent',
-                  color: isActive ? '#fff' : '#64748b',
-                  border: isActive ? 'none' : '1px solid transparent',
-                  transition: 'all 0.1s',
-                }}>
+                <a
+                  key={tab.value}
+                  href={tab.value ? '?status=' + tab.value : '/requests'}
+                  style={{ padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', textDecoration: 'none', background: isActive ? '#6366f1' : 'transparent', color: isActive ? '#fff' : '#64748b', border: isActive ? 'none' : '1px solid transparent', transition: 'all 0.1s' }}
+                >
                   {tab.label}
                 </a>
               )
@@ -155,11 +146,10 @@ export default async function RequestsPage({
                   <tr key={req.id} style={{ borderBottom: i < requests.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
                     <td style={{ padding: '13px 16px' }}>
                       <div style={{ fontSize: '13px', fontWeight: '500', color: '#0f172a' }}>{req.companyName}</div>
-                      {(req as any).pt1112 && <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>#{(req as any).pt1112}</div>}
                     </td>
                     <td style={{ padding: '13px 16px' }}>
                       <div style={{ fontSize: '12px', color: '#475569', fontFamily: 'monospace' }}>{req.dotNumber}</div>
-                      {(req as any).mcNumber && <div style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>{(req as any).mcNumber}</div>}
+                      {req.mcNumber && <div style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>{req.mcNumber}</div>}
                     </td>
                     <td style={{ padding: '13px 16px' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '500', background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
@@ -169,7 +159,7 @@ export default async function RequestsPage({
                     <td style={{ padding: '13px 16px', fontSize: '13px', color: '#64748b' }}>
                       {req.carriers.length > 0 ? (
                         <div style={{ fontSize: '12px', color: '#475569' }}>
-                          {req.carriers.slice(0, 2).map((c: any) => c.name || c.carrierName).join(', ')}
+                          {req.carriers.slice(0, 2).map((c) => c.carrierName).join(', ')}
                           {req.carriers.length > 2 && <span style={{ color: '#94a3b8' }}> +{req.carriers.length - 2}</span>}
                         </div>
                       ) : (
@@ -180,7 +170,7 @@ export default async function RequestsPage({
                     <td style={{ padding: '13px 16px', fontSize: '12px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{timeAgo(req.createdAt)}</td>
                     <td style={{ padding: '13px 16px' }}>
                       <Link href={'/requests/' + req.id} style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none', fontWeight: '500', whiteSpace: 'nowrap' }}>
-                        View →
+                        View &rarr;
                       </Link>
                     </td>
                   </tr>
