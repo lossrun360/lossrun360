@@ -1,8 +1,9 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import Link from 'next/link'
 import { RequestStatus } from '@prisma/client'
+import { RequestsTable } from '@/components/requests-table'
+import { NewRequestButton } from '@/components/new-request-button'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   DRAFT: { label: 'Draft', color: '#92400e', bg: '#fef3c7' },
@@ -11,14 +12,6 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   SENT_TO_CARRIER: { label: 'Sent to Carrier', color: '#6b21a8', bg: '#f3e8ff' },
   COMPLETED: { label: 'Completed', color: '#065f46', bg: '#d1fae5' },
   CANCELLED: { label: 'Cancelled', color: '#991b1b', bg: '#fee2e2' },
-}
-
-function timeAgo(date: Date) {
-  const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
-  if (s < 60) return 'just now'
-  if (s < 3600) return Math.floor(s / 60) + 'm ago'
-  if (s < 86400) return Math.floor(s / 3600) + 'h ago'
-  return Math.floor(s / 86400) + 'd ago'
 }
 
 export default async function RequestsPage({
@@ -54,14 +47,25 @@ export default async function RequestsPage({
     { label: 'Completed This Month', value: completedThisMonth, iconBg: '#d1fae5', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> },
   ]
 
+  const serializedRequests = requests.map((req) => ({
+    id: req.id,
+    companyName: req.companyName,
+    dotNumber: req.dotNumber,
+    status: req.status,
+    carriers: req.carriers.map((c) => ({ id: c.id, carrierName: c.carrierName })),
+    createdBy: req.createdBy ? { name: req.createdBy.name } : null,
+    createdAt: req.createdAt.toISOString(),
+  }))
+
   return (
     <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.4px', margin: 0 }}>Loss Run Requests</h1>
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.4px', margin: 0 }}>Dashboard</h1>
           <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>{(session?.user as any)?.agencyName || 'Your agency'}</p>
         </div>
+        <NewRequestButton />
       </div>
 
       {/* Metric cards */}
@@ -119,49 +123,11 @@ export default async function RequestsPage({
             </div>
             <p style={{ fontSize: '15px', fontWeight: '600', color: '#0f172a', margin: '0 0 4px' }}>No requests found</p>
             <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 18px' }}>
-              {query || statusFilter ? 'Try adjusting your filters.' : 'Click "+ New Request" above to get started.'}
+              {query || statusFilter ? 'Try adjusting your filters.' : 'Click "+ New Request" to get started.'}
             </p>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f8fafc' }}>
-                {['Company', 'DOT# / MC#', 'Status', 'Carriers', 'Agent', 'Created'].map((h) => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10.5px', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', color: '#94a3b8', borderBottom: '1px solid #e2e8f0' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {requests.map((req, i) => {
-                const s = STATUS_CONFIG[req.status] || { label: req.status, color: '#475569', bg: '#f1f5f9' }
-                return (
-                  <tr key={req.id} style={{ borderBottom: i < requests.length - 1 ? '1px solid #f1f5f9' : 'none', position: 'relative', cursor: 'pointer' }}>
-                    <td style={{ padding: '13px 16px' }}>
-                      <Link href={'/requests/' + req.id} style={{ position: 'absolute', inset: 0, zIndex: 0 }} aria-label={'View ' + req.companyName} />
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', position: 'relative', zIndex: 1 }}>{req.companyName}</div>
-                    </td>
-                    <td style={{ padding: '13px 16px', position: 'relative', zIndex: 1 }}>
-                      <div style={{ fontSize: '12px', color: '#475569', fontFamily: 'monospace' }}>{req.dotNumber}</div>
-                      {req.mcNumber && <div style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>{req.mcNumber}</div>}
-                    </td>
-                    <td style={{ padding: '13px 16px', position: 'relative', zIndex: 1 }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '500', background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>{s.label}</span>
-                    </td>
-                    <td style={{ padding: '13px 16px', position: 'relative', zIndex: 1 }}>
-                      {req.carriers.length > 0 ? (
-                        <div style={{ fontSize: '12px', color: '#475569' }}>
-                          {req.carriers.slice(0, 2).map((c) => c.carrierName).join(', ')}
-                          {req.carriers.length > 2 && <span style={{ color: '#94a3b8' }}> +{req.carriers.length - 2}</span>}
-                        </div>
-                      ) : <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>}
-                    </td>
-                    <td style={{ padding: '13px 16px', fontSize: '12px', color: '#64748b', position: 'relative', zIndex: 1 }}>{req.createdBy?.name || '—'}</td>
-                    <td style={{ padding: '13px 16px', fontSize: '12px', color: '#94a3b8', whiteSpace: 'nowrap', position: 'relative', zIndex: 1 }}>{timeAgo(req.createdAt)}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+          <RequestsTable requests={serializedRequests} />
         )}
       </div>
     </div>
