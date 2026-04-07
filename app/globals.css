@@ -247,7 +247,7 @@ h4 { font-size: 14px; font-weight: 600; line-height: 1.4; }
 /* ─── Scrollbar ─────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 99px; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-2); }
 
 /* ─── Tailwind CSS variable mappings ────────────────────── */
