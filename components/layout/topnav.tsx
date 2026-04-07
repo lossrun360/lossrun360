@@ -23,7 +23,7 @@ export function TopNav() {
     <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', height: '56px', display: 'flex', alignItems: 'center', paddingLeft: '24px', paddingRight: '24px', position: 'sticky', top: 0, zIndex: 40 }}>
       {/* Logo */}
       <Link href="/requests" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', marginRight: '32px', flexShrink: 0 }}>
-        <div style={{ width: '30px', height: '30px', background: '#6366f1', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '30px', height: '30px', background: '#6366f1', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
             <path d="M3 12L6 4L9 9L11 6L14 12H3Z" fill="white" strokeWidth="0"/>
             <circle cx="11.5" cy="4.5" r="1.5" fill="rgba(255,255,255,0.7)"/>
@@ -44,7 +44,7 @@ export function TopNav() {
               href={item.href}
               style={{
                 padding: '6px 12px',
-                borderRadius: '6px',
+                borderRadius: '3px',
                 fontSize: '13.5px',
                 fontWeight: isActive ? '600' : '500',
                 color: isActive ? '#6366f1' : '#64748b',
@@ -62,7 +62,7 @@ export function TopNav() {
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 8px 5px 5px', background: 'transparent', border: 'none', borderRadius: '7px', cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 8px 5px 5px', background: 'transparent', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>
             <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#6366f1', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '600', flexShrink: 0 }}>
               {initials}
             </div>
@@ -74,16 +74,16 @@ export function TopNav() {
             </svg>
           </button>
           {userMenuOpen && (
-            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4px', boxShadow: '0 8px 24px rgba(15,23,42,0.12)', minWidth: '180px', zIndex: 50 }}>
+            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px', boxShadow: '0 8px 24px rgba(15,23,42,0.12)', minWidth: '180px', zIndex: 50 }}>
               <div style={{ padding: '8px 12px 6px', borderBottom: '1px solid #f1f5f9', marginBottom: '4px' }}>
                 <div style={{ fontSize: '12px', fontWeight: '600', color: '#0f172a' }}>{session?.user?.name}</div>
                 <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>{session?.user?.email}</div>
               </div>
-              <Link href="/settings" onClick={() => setUserMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '6px', fontSize: '13px', color: '#475569', textDecoration: 'none' }}>
+              <Link href="/settings" onClick={() => setUserMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '3px', fontSize: '13px', color: '#475569', textDecoration: 'none' }}>
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                 Settings
               </Link>
-              <button onClick={() => { setUserMenuOpen(false); signOut({ callbackUrl: '/login' }) }} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '7px 10px', borderRadius: '6px', fontSize: '13px', color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
+              <button onClick={() => { setUserMenuOpen(false); signOut({ callbackUrl: '/login' }) }} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '7px 10px', borderRadius: '3px', fontSize: '13px', color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 8H2M2 8L5 5M2 8L5 11M9 5V3a1 1 0 011-1h3a1 1 0 011 1v10a1 1 0 01-1 1h-3a1 1 0 01-1-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 Sign out
               </button>
