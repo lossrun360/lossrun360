@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
-import { cn } from '@/lib/utils'
 import { ROLE_LABELS } from '@/lib/utils'
 
 const navigation = [
@@ -67,72 +66,78 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="w-60 shrink-0 h-screen sticky top-0 flex flex-col bg-white overflow-y-auto"
-      style={{ borderRight: '1px solid #E2E8F0' }}
+      className="w-[220px] shrink-0 h-screen sticky top-0 flex flex-col overflow-y-auto"
+      style={{ background: '#ffffff', borderRight: '1px solid rgba(19,0,50,0.15)' }}
     >
       {/* Logo */}
-      <div className="h-16 flex items-center px-5" style={{ borderBottom: '1px solid #E2E8F0' }}>
+      <div
+        className="h-14 flex items-center px-5 shrink-0"
+        style={{ borderBottom: '1px solid rgba(19,0,50,0.15)' }}
+      >
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: '#1654D9' }}
+            className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+            style={{ background: '#4c00ff' }}
           >
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
               <path d="M3 2h7l4 4v8H3V2z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
               <path d="M10 2v4h4M5 8h6M5 11h4" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </div>
-          <span className="font-bold text-base tracking-tight" style={{ color: '#0D1C38' }}>
-            LossRun<span style={{ color: '#E8691A' }}>360</span>
+          <span
+            className="font-semibold text-sm tracking-tight"
+            style={{ color: '#130032' }}
+          >
+            LossRun<span style={{ color: '#4c00ff' }}>360</span>
           </span>
         </Link>
       </div>
 
-      {/* New Request button */}
-      <div className="px-4 pt-4 pb-2">
+      {/* New Request CTA */}
+      <div className="px-3 py-3 shrink-0">
         <Link
           href="/requests/new"
-          className="flex items-center justify-center gap-2 w-full py-2 rounded-lg text-sm font-semibold text-white transition-all"
-          style={{ background: '#1654D9' }}
+          className="flex items-center justify-center gap-2 w-full rounded-md text-sm font-semibold text-white transition-colors"
+          style={{ background: '#4c00ff', height: '40px' }}
+          onMouseOver={e => (e.currentTarget.style.background = '#3d1eb2')}
+          onMouseOut={e => (e.currentTarget.style.background = '#4c00ff')}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M7 1v12M1 7h12" stroke="white" strokeWidth="2" strokeLinecap="round" />
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+            <path d="M7 1v12M1 7h12" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
           </svg>
           New Request
         </Link>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-2">
+      {/* Nav section */}
+      <nav className="flex-1 overflow-y-auto">
         <p
-          className="px-2 mb-2 text-xs font-semibold uppercase tracking-widest"
-          style={{ color: '#94A3B8' }}
+          className="px-4 mt-2 mb-1 text-[10px] font-medium uppercase tracking-widest"
+          style={{ color: 'rgba(19,0,50,0.4)' }}
         >
           Menu
         </p>
-        <ul className="space-y-0.5">
+        <ul>
           {navigation.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + '/')
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative"
+                  className="flex items-center gap-3 text-[13px] transition-colors relative"
                   style={{
-                    background: isActive ? '#EEF3FD' : 'transparent',
-                    color: isActive ? '#1654D9' : '#475569',
+                    padding: '8px 16px',
+                    fontWeight: isActive ? 500 : 400,
+                    color: isActive ? '#4c00ff' : 'rgba(19,0,50,0.6)',
+                    background: isActive ? 'rgba(76,0,255,0.08)' : 'transparent',
+                    borderLeft: isActive ? '3px solid #4c00ff' : '3px solid transparent',
                   }}
                 >
-                  <span style={{ color: isActive ? '#1654D9' : '#94A3B8' }}>
+                  <span style={{ color: isActive ? '#4c00ff' : 'rgba(19,0,50,0.4)' }}>
                     {item.icon}
                   </span>
                   {item.label}
-                  {isActive && (
-                    <span
-                      className="absolute right-2 w-1.5 h-1.5 rounded-full"
-                      style={{ background: '#1654D9' }}
-                    />
-                  )}
                 </Link>
               </li>
             )
@@ -141,30 +146,47 @@ export default function Sidebar() {
       </nav>
 
       {/* User footer */}
-      <div className="p-3" style={{ borderTop: '1px solid #E2E8F0' }}>
-        <div className="flex items-center gap-3 px-2 py-2 rounded-lg">
+      <div
+        className="p-3 shrink-0"
+        style={{ borderTop: '1px solid rgba(19,0,50,0.15)' }}
+      >
+        <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-md">
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0"
-            style={{ background: '#1654D9' }}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0"
+            style={{ background: '#4c00ff' }}
           >
-            {(session?.user?.name || session?.user?.email || 'U').charAt(0).toUpperCase()}
+            {(session?.user?.name || session?.user?.email || 'U')
+              .charAt(0)
+              .toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: '#0D1C38' }}>
+            <p
+              className="text-[13px] font-medium truncate"
+              style={{ color: '#130032' }}
+            >
               {session?.user?.name || 'User'}
             </p>
-            <p className="text-xs truncate" style={{ color: '#94A3B8' }}>
+            <p
+              className="text-[11px] truncate"
+              style={{ color: 'rgba(19,0,50,0.5)' }}
+            >
               {session?.user?.role ? ROLE_LABELS[session.user.role] : ''}
             </p>
           </div>
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
             className="shrink-0 p-1 rounded transition-colors"
-            style={{ color: '#94A3B8' }}
+            style={{ color: 'rgba(19,0,50,0.4)' }}
             title="Sign out"
           >
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-              <path d="M6 2H3a1 1 0 00-1 1v9a1 1 0 001 1h3M10 10l3-3-3-3M13 7.5H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="14" height="14" viewBox="0 0 15 15" fill="none">
+              <path
+                d="M6 2H3a1 1 0 00-1 1v9a1 1 0 001 1h3M10 10l3-3-3-3M13 7.5H6"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
         </div>
