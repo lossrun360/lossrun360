@@ -1,144 +1,193 @@
 import { getServerSession } from 'next-auth'
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { Header } from '@/components/layout/header'
-import { STATUS_LABELS, STATUS_COLORS, formatDate, timeAgo } from '@/lib/utils'
+import Link from 'next/link'
 
-export const metadata = { title: 'Loss Run Requests' }
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  DRAFT:              { label: 'Draft',              color: '#92400e', bg: '#fef3c7' },
+  AWAITING_SIGNATURE: { label: 'Awaiting Signature', color: '#1e40af', bg: '#dbeafe' },
+  SIGNED:             { label: 'Signed',             color: '#065f46', bg: '#d1fae5' },
+  SENT_TO_CARRIER:    { label: 'Sent to Carrier',    color: '#6b21a8', bg: '#f3e8ff' },
+  COMPLETED:          { label: 'Completed',          color: '#065f46', bg: '#d1fae5' },
+  CANCELLED:          { label: 'Cancelled',          color: '#991b1b', bg: '#fee2e2' },
+}
 
-interface SearchParams {
-  status?: string
-  search?: string
-  page?: string
+const STATUSES = ['All', 'Draft', 'Awaiting Signature', 'Signed', 'Sent to Carrier', 'Completed', 'Cancelled']
+
+function timeAgo(date: Date) {
+  const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
+  if (s < 60) return 'just now'
+  if (s < 3600) return Math.floor(s / 60) + 'm ago'
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago'
+  return Math.floor(s / 86400) + 'd ago'
 }
 
 export default async function RequestsPage({
   searchParams,
 }: {
-  searchParams: SearchParams
+  searchParams: { status?: string; q?: string }
 }) {
   const session = await getServerSession(authOptions)
-  if (!session) redirect('/login')
+  const agencyId = (session?.user as any)?.agencyId
 
-  const page = Math.max(1, parseInt(searchParams.page || '1'))
-  const pageSize = 20
-  const skip = (page - 1) * pageSize
+  const statusFilter = searchParams.status
+  const query = searchParams.q
 
-  const where: any = { agencyId: session.user.agencyId }
-  if (searchParams.status) where.status = searchParams.status
-  if (searchParams.search) {
-    where.OR = [
-      { companyName: { contains: searchParams.search, mode: 'insensitive' } },
-      { dotNumber: { contains: searchParams.search } },
-      { mcNumber: { contains: searchParams.search } },
-    ]
+  const requests = await prisma.lossRunRequest.findMany({
+    where: {
+      agencyId,
+      ...(statusFilter && statusFilter !== 'ALL' ? { status: statusFilter } : {}),
+      ...(query ? {
+        OR: [
+          { companyName: { contains: query, mode: 'insensitive' } },
+          { dotNumber: { contains: query, mode: 'insensitive' } },
+        ],
+      } : {}),
+    },
+    orderBy: { createdAt: 'desc' },
+    include: { carriers: true, createdBy: true },
+  })
+
+  const statusCounts: Record<string, number> = { ALL: requests.length }
+  for (const r of requests) {
+    statusCounts[r.status] = (statusCounts[r.status] || 0) + 1
   }
 
-  const [requests, total] = await Promise.all([
-    prisma.lossRunRequest.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: pageSize,
-      include: {
-        createdBy: { select: { name: true, email: true } },
-        carriers: { select: { carrierName: true, status: true } },
-      },
-    }),
-    prisma.lossRunRequest.count({ where }),
-  ])
-
-  const totalPages = Math.ceil(total / pageSize)
-
-  const statusOptions = [
-    { value: '', label: 'All Statuses' },
-    { value: 'DRAFT', label: 'Draft' },
-    { value: 'PENDING_SIGNATURE', label: 'Awaiting Signature' },
-    { value: 'SIGNED', label: 'Signed' },
-    { value: 'SENT_TO_CARRIER', label: 'Sent to Carrier' },
-    { value: 'COMPLETED', label: 'Completed' },
-    { value: 'CANCELLED', label: 'Cancelled' },
-  ]
-
   return (
-    <div>
-      <Header title="Loss Run Requests" />
-      <div className="p-6 space-y-5">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <form method="GET" className="flex gap-2 flex-1">
-            <input type="text" name="search" defaultValue={searchParams.search} placeholder="Search by company name or DOT#..." className="input max-w-sm" />
-            {searchParams.status && <input type="hidden" name="status" value={searchParams.status} />}
-            <button type="submit" className="btn-secondary btn">Search</button>
-          </form>
-          <div className="flex gap-2">
-            <div className="flex gap-1 flex-wrap">
-              {statusOptions.map((opt) => (
-                <Link key={opt.value} href={`/requests${opt.value ? `?status=${opt.value}` : ''}`}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    (searchParams.status || '') === opt.value
-                      ? 'bg-primary text-white'
-                      : 'bg-surface-2 text-text-secondary border border-border hover:border-border-2'
-                  }`}>
-                  {opt.label}
-                </Link>
-              ))}
-            </div>
-            <Link href="/requests/new" className="btn-primary btn shrink-0">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <div style={{ padding: '32px', maxWidth: '1200px', margin: '0 auto' }}>
+
+      {/* Page header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <div>
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.4px', margin: 0 }}>Loss Run Requests</h1>
+          <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>{requests.length} total request{requests.length !== 1 ? 's' : ''}</p>
+        </div>
+        <Link href="/requests/new" style={{
+          display: 'inline-flex', alignItems: 'center', gap: '6px',
+          padding: '8px 16px', background: '#6366f1', color: '#fff',
+          borderRadius: '8px', fontSize: '13px', fontWeight: '500', textDecoration: 'none',
+          boxShadow: '0 1px 3px rgba(99,102,241,0.3)',
+        }}>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1V12M1 6.5H12" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>
+          New Request
+        </Link>
+      </div>
+
+      {/* Filters */}
+      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.05)' }}>
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Search */}
+          <form method="GET" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '200px' }}>
+            <div style={{ position: 'relative', flex: 1, maxWidth: '280px' }}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
+                <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4"/>
+                <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
               </svg>
-              New Request
-            </Link>
+              <input
+                name="q"
+                defaultValue={query}
+                placeholder="Search by company or DOT#..."
+                style={{ width: '100%', padding: '7px 10px 7px 30px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '13px', color: '#0f172a', background: '#f8fafc', outline: 'none' }}
+              />
+            </div>
+            <button type="submit" style={{ padding: '7px 14px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '12px', fontWeight: '500', color: '#475569', cursor: 'pointer' }}>
+              Search
+            </button>
+          </form>
+
+          {/* Status tabs */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+            {[
+              { value: '', label: 'All' },
+              { value: 'DRAFT', label: 'Draft' },
+              { value: 'AWAITING_SIGNATURE', label: 'Awaiting Sig.' },
+              { value: 'SIGNED', label: 'Signed' },
+              { value: 'SENT_TO_CARRIER', label: 'Sent' },
+              { value: 'COMPLETED', label: 'Completed' },
+              { value: 'CANCELLED', label: 'Cancelled' },
+            ].map((tab) => {
+              const isActive = (statusFilter || '') === tab.value
+              return (
+                <a key={tab.value} href={tab.value ? '?status=' + tab.value : '/requests'} style={{
+                  padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '500',
+                  textDecoration: 'none',
+                  background: isActive ? '#6366f1' : 'transparent',
+                  color: isActive ? '#fff' : '#64748b',
+                  border: isActive ? 'none' : '1px solid transparent',
+                  transition: 'all 0.1s',
+                }}>
+                  {tab.label}
+                </a>
+              )
+            })}
           </div>
         </div>
-        <p className="text-sm text-text-muted">
-          {total} request{total !== 1 ? 's' : ''}{searchParams.status && ` — ${STATUS_LABELS[searchParams.status]}`}
-        </p>
+
+        {/* Table */}
         {requests.length === 0 ? (
-          <div className="card"><div className="empty-state">
-            <svg className="empty-state-icon w-12 h-12" viewBox="0 0 48 48" fill="none">
-              <path d="M8 6h24l10 10v30H8V6z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-              <path d="M32 6v10h10M16 22h16M16 28h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-            <p className="empty-state-title">{searchParams.search || searchParams.status ? 'No matching requests' : 'No requests yet'}</p>
-            <p className="empty-state-desc">{searchParams.search || searchParams.status ? 'Try adjusting your search or filter' : 'Create your first loss run request by looking up a DOT#.'}</p>
-            {!searchParams.search && !searchParams.status && <Link href="/requests/new" className="btn-primary btn">Create First Request</Link>}
-          </div></div>
-        ) : (
-          <>
-            <div className="table-wrapper">
-              <table>
-                <thead><tr><th>Company</th><th>DOT# / MC#</th><th>Status</th><th>Carriers</th><th>Agent</th><th>Created</th><th></th></tr></thead>
-                <tbody>
-                  {requests.map((req) => (
-                    <tr key={req.id}>
-                      <td>
-                        <Link href={`/requests/${req.id}`} className="font-semibold text-text-primary hover:text-primary transition-colors">{req.companyName}</Link>
-                        <p className="text-xs text-text-muted font-mono">#{req.requestNumber.slice(-6)}</p>
-                      </td>
-                      <td><span className="font-mono text-sm">{req.dotNumber}</span>{req.mcNumber && <p className="text-xs text-text-muted">{req.mcNumber}</p>}</td>
-                      <td><span className={`badge ${STATUS_COLORS[req.status]}`}>{STATUS_LABELS[req.status]}</span></td>
-                      <td>{req.carriers.length === 0 ? <span className="text-text-muted text-xs">None</span> : <div className="space-y-0.5">{req.carriers.slice(0, 2).map((c, i) => <p key={i} className="text-xs text-text-secondary truncate max-w-[140px]">{c.carrierName}</p>)}{req.carriers.length > 2 && <p className="text-xs text-text-muted">+{req.carriers.length - 2} more</p>}</div>}</td>
-                      <td className="text-text-secondary text-sm">{req.createdBy?.name || req.createdBy?.email}</td>
-                      <td className="text-text-muted text-xs">{timeAgo(req.createdAt)}</td>
-                      <td><Link href={`/requests/${req.id}`} className="btn-ghost btn-sm btn">View →</Link></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div style={{ padding: '56px 24px', textAlign: 'center' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             </div>
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-text-muted">Page {page} of {totalPages}</p>
-                <div className="flex gap-2">
-                  {page > 1 && <Link href={`/requests?page=${page - 1}${searchParams.status ? `&status=${searchParams.status}` : ''}`} className="btn-secondary btn-sm btn">← Previous</Link>}
-                  {page < totalPages && <Link href={`/requests?page=${page + 1}${searchParams.status ? `&status=${searchParams.status}` : ''}`} className="btn-secondary btn-sm btn">Next →</Link>}
-                </div>
-              </div>
-            )}
-          </>
+            <p style={{ fontSize: '15px', fontWeight: '600', color: '#0f172a', margin: '0 0 4px' }}>No requests found</p>
+            <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 18px' }}>
+              {query || statusFilter ? 'Try adjusting your filters.' : 'Create your first loss run request to get started.'}
+            </p>
+            <Link href="/requests/new" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '8px 16px', background: '#6366f1', color: '#fff', borderRadius: '7px', fontSize: '13px', fontWeight: '500', textDecoration: 'none' }}>
+              + New Request
+            </Link>
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc' }}>
+                {['Company', 'DOT# / MC#', 'Status', 'Carriers', 'Agent', 'Created', ''].map((h) => (
+                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10.5px', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', color: '#94a3b8', borderBottom: '1px solid #e2e8f0' }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {requests.map((req, i) => {
+                const s = STATUS_CONFIG[req.status] || { label: req.status, color: '#475569', bg: '#f1f5f9' }
+                return (
+                  <tr key={req.id} style={{ borderBottom: i < requests.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                    <td style={{ padding: '13px 16px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '500', color: '#0f172a' }}>{req.companyName}</div>
+                      {(req as any).pt1112 && <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>#{(req as any).pt1112}</div>}
+                    </td>
+                    <td style={{ padding: '13px 16px' }}>
+                      <div style={{ fontSize: '12px', color: '#475569', fontFamily: 'monospace' }}>{req.dotNumber}</div>
+                      {(req as any).mcNumber && <div style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>{(req as any).mcNumber}</div>}
+                    </td>
+                    <td style={{ padding: '13px 16px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '500', background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
+                        {s.label}
+                      </span>
+                    </td>
+                    <td style={{ padding: '13px 16px', fontSize: '13px', color: '#64748b' }}>
+                      {req.carriers.length > 0 ? (
+                        <div style={{ fontSize: '12px', color: '#475569' }}>
+                          {req.carriers.slice(0, 2).map((c: any) => c.name || c.carrierName).join(', ')}
+                          {req.carriers.length > 2 && <span style={{ color: '#94a3b8' }}> +{req.carriers.length - 2}</span>}
+                        </div>
+                      ) : (
+                        <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '13px 16px', fontSize: '12px', color: '#64748b' }}>{req.createdBy?.name || '—'}</td>
+                    <td style={{ padding: '13px 16px', fontSize: '12px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{timeAgo(req.createdAt)}</td>
+                    <td style={{ padding: '13px 16px' }}>
+                      <Link href={'/requests/' + req.id} style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none', fontWeight: '500', whiteSpace: 'nowrap' }}>
+                        View →
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
