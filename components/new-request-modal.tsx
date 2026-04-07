@@ -116,11 +116,11 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
 
   if (!isOpen) return null
 
-  const card: React.CSSProperties = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px' }
-  const inp: React.CSSProperties = { display: 'block', width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', color: '#0f172a', background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }
+  const card: React.CSSProperties = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '20px' }
+  const inp: React.CSSProperties = { display: 'block', width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '3px', fontSize: '13px', color: '#0f172a', background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }
   const lbl: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: '500', color: '#475569', marginBottom: '5px' }
-  const btnP: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 16px', background: '#6366f1', color: '#fff', borderRadius: '6px', fontSize: '13px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-  const btnS: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 16px', background: '#f1f5f9', color: '#475569', borderRadius: '6px', fontSize: '13px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+  const btnP: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 16px', background: '#6366f1', color: '#fff', borderRadius: '3px', fontSize: '13px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+  const btnS: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 16px', background: '#f1f5f9', color: '#475569', borderRadius: '3px', fontSize: '13px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 
   return (
     <div
@@ -128,12 +128,12 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <style>{'@keyframes spin { to { transform: rotate(360deg) } }'}</style>
-      <div style={{ background: '#f8fafc', borderRadius: '10px', width: '100%', maxWidth: '680px', boxShadow: '0 24px 64px rgba(15,23,42,0.22)', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ background: '#f8fafc', borderRadius: '4px', width: '100%', maxWidth: '680px', boxShadow: '0 24px 64px rgba(15,23,42,0.22)', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
         <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '14px 20px', borderRadius: '10px 10px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', margin: 0 }}>New Loss Run Request</h2>
-          <button onClick={onClose} style={{ width: '28px', height: '28px', border: 'none', background: '#f1f5f9', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button onClick={onClose} style={{ width: '28px', height: '28px', border: 'none', background: '#f1f5f9', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round"/></svg>
           </button>
         </div>
@@ -157,7 +157,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                   </button>
                 </div>
               </form>
-              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '14px' }}>
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '3px', padding: '14px' }}>
                 <p style={{ fontSize: '11px', fontWeight: '600', color: '#475569', margin: '0 0 8px' }}>WHAT GETS PULLED AUTOMATICALLY</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
                   {['Legal company name & DBA', 'Owner / operator name', 'Address & contact info', 'Entity type', 'Fleet size (trucks & drivers)', '5-year insurance history'].map((item) => (
@@ -173,7 +173,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
           {/* Step 2 */}
           {step === 2 && lookupResult && (
             <>
-              <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '6px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '3px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ color: '#10b981', fontWeight: '700', fontSize: '15px' }}>&#10003;</span>
                 <div>
                   <p style={{ fontSize: '12px', fontWeight: '600', color: '#10b981', margin: 0 }}>FMCSA Data Retrieved &mdash; DOT# {dotInput} &middot; {lookupResult.operatingStatus || 'ACTIVE'} &middot; {lookupResult.insuranceHistory?.length || 0} records</p>
@@ -218,7 +218,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                 <div style={card}>
                   <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', margin: '0 0 10px' }}>
                     Insurance History from FMCSA{' '}
-                    <span style={{ marginLeft: '6px', background: '#ede9fe', color: '#6366f1', fontSize: '10px', fontWeight: '600', padding: '1px 7px', borderRadius: '99px' }}>{lookupResult.insuranceHistory.length} records</span>
+                    <span style={{ marginLeft: '6px', background: '#ede9fe', color: '#6366f1', fontSize: '10px', fontWeight: '600', padding: '1px 7px', borderRadius: '4px' }}>{lookupResult.insuranceHistory.length} records</span>
                   </h4>
                   {lookupResult.insuranceHistory.map((h, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < lookupResult.insuranceHistory!.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
@@ -256,7 +256,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                 <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 10px' }}>Choose which carriers to send the loss run request to.</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
                   {carriers.map((carrier) => (
-                    <label key={carrier.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '6px', border: `1px solid ${selectedCarrierIds.includes(carrier.id) ? 'rgba(99,102,241,0.4)' : '#e2e8f0'}`, background: selectedCarrierIds.includes(carrier.id) ? 'rgba(99,102,241,0.04)' : '#fff', cursor: 'pointer' }}>
+                    <label key={carrier.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '3px', border: `1px solid ${selectedCarrierIds.includes(carrier.id) ? 'rgba(99,102,241,0.4)' : '#e2e8f0'}`, background: selectedCarrierIds.includes(carrier.id) ? 'rgba(99,102,241,0.04)' : '#fff', cursor: 'pointer' }}>
                       <input type="checkbox" style={{ width: '14px', height: '14px', accentColor: '#6366f1' }} checked={selectedCarrierIds.includes(carrier.id)} onChange={() => toggleCarrier(carrier.id)} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: '12px', fontWeight: '500', color: '#0f172a', margin: 0 }}>{carrier.name}</p>
@@ -316,11 +316,11 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                 </div>
                 <div>
                   <label style={lbl}>CC Emails (Optional)</label>
-                  <textarea style={{ display: 'block', width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', color: '#0f172a', background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', resize: 'none' }} rows={2} placeholder="agent@agency.com, manager@agency.com" value={form.ccEmails} onChange={(e) => updateForm('ccEmails', e.target.value)} />
+                  <textarea style={{ display: 'block', width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '3px', fontSize: '13px', color: '#0f172a', background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', resize: 'none' }} rows={2} placeholder="agent@agency.com, manager@agency.com" value={form.ccEmails} onChange={(e) => updateForm('ccEmails', e.target.value)} />
                 </div>
                 <div>
                   <label style={lbl}>Notes (Optional)</label>
-                  <textarea style={{ display: 'block', width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', color: '#0f172a', background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', resize: 'none' }} rows={2} placeholder="Any additional notes..." value={form.notes} onChange={(e) => updateForm('notes', e.target.value)} />
+                  <textarea style={{ display: 'block', width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '3px', fontSize: '13px', color: '#0f172a', background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', resize: 'none' }} rows={2} placeholder="Any additional notes..." value={form.notes} onChange={(e) => updateForm('notes', e.target.value)} />
                 </div>
               </div>
 
