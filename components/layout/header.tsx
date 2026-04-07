@@ -14,7 +14,7 @@ export function Header({ title, subtitle, actions }: HeaderProps) {
 
   return (
     <header
-      className="h-16 bg-white sticky top-0 z-10 flex items-center px-6 gap-4"
+      className="h-12 bg-white sticky top-0 z-10 flex items-center px-5 gap-3"h
       style={{ borderBottom: '1px solid #E2E8F0' }}
     >
       {/* Page title */}
