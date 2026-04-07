@@ -17,9 +17,9 @@ export default async function DashboardLayout({
 
   return (
     <SessionProvider session={session}>
-      <div className="min-h-screen flex flex-col" style={{ background: '#F4F7FC' }}>
+      <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
         <TopNav />
-        <main className="flex-1">
+        <main style={{ minHeight: 'calc(100vh - 56px)' }}>
           {children}
         </main>
       </div>
