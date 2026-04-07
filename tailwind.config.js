@@ -1,102 +1,72 @@
 /** @type {import('tailwindcss').Config} */
-// Colors mirror the CSS variables in globals.css :root exactly.
-// If you update a token there, update it here too.
 module.exports = {
-  content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
-  theme: {
-    extend: {
-      colors: {
-        // ── DocuSign brand purples ────────────────────────────────────
-        primary: {
-          DEFAULT: '#4c00ff',   // --ds-purple-brand
-          hover:   '#3d1eb2',   // --ds-purple-mid
-          light:   '#7b3fff',
-          dark:    '#2e0099',
-        },
-        // ── Page & surface backgrounds ────────────────────────────────
-        background: '#f7f7fb',   // --ds-page-bg  (very faint purple tint)
-        surface:    '#ffffff',   // --ds-white
-        'surface-2': 'rgba(19,0,50,0.04)',   // subtle hover / section bg
-        'surface-3': 'rgba(19,0,50,0.07)',
-
-        // ── Borders ───────────────────────────────────────────────────
-        border:    'rgba(19,0,50,0.15)',  // --ds-border
-        'border-2': 'rgba(19,0,50,0.3)', // --ds-border-strong
-
-        // ── Typography ────────────────────────────────────────────────
-        'text-primary':   '#130032',              // --ds-text-primary
-        'text-secondary': 'rgba(19,0,50,0.75)',   // --ds-text-muted
-        'text-muted':     'rgba(19,0,50,0.5)',    // --ds-text-subtle
-        'text-faint':     'rgba(19,0,50,0.35)',   // --ds-text-faint
-
-        // ── Semantic ──────────────────────────────────────────────────
-        success: '#059669',
-        warning: '#d97706',
-        danger:  '#dc2626',
-
-        // ── Legacy sidebar tokens (kept for any remaining usages) ─────
-        'sidebar-bg':          '#ffffff',
-        'sidebar-border':      'rgba(19,0,50,0.15)',
-        'sidebar-text':        'rgba(19,0,50,0.6)',
-        'sidebar-text-active': '#4c00ff',
-      },
-
-      fontFamily: {
-        sans: ['Inter', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
-      },
-
-      fontSize: {
-        // DocuSign type scale
-        'ds-label': ['11px', { lineHeight: '1.4', letterSpacing: '0.08em', fontWeight: '500' }],
-        'ds-body':  ['14px', { lineHeight: '1.5' }],
-        'ds-sm':    ['13px', { lineHeight: '1.5' }],
-        'ds-lg':    ['15px', { lineHeight: '1.4' }],
-      },
-
-      borderRadius: {
-        sm: '4px',   // --ds-radius-sm
-        md: '8px',   // --ds-radius-md
-        lg: '12px',  // --ds-radius-lg
-        DEFAULT: '8px',
-      },
-
-      boxShadow: {
-        card:   '0 1px 3px rgba(19,0,50,0.08), 0 4px 16px rgba(19,0,50,0.06)',   // --ds-shadow-card
-        raised: '0 2px 8px rgba(19,0,50,0.12), 0 8px 24px rgba(19,0,50,0.08)',   // --ds-shadow-raised
-        focus:  '0 0 0 3px rgba(76,0,255,0.12)',
-      },
-
-      backgroundImage: {
-        // DocuSign hero gradient — exactly as extracted from docusign.com
-        'ds-hero': 'radial-gradient(100% 100% at 50% 0%, #4c00ff 0%, #26065d 100%)',
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-      },
-
-      transitionDuration: {
-        DEFAULT: '150ms',
-      },
-
-      animation: {
-        'fade-in':   'fadeIn 0.15s ease',
-        'slide-in':  'slideIn 0.15s ease-out',
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4,0,0.6,1) infinite',
-      },
-      keyframes: {
-        fadeIn: {
-          '0%':   { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideIn: {
-          '0%':   { transform: 'translateY(-6px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)',    opacity: '1' },
-        },
-      },
+    content: [
+          './pages/**/*.{js,ts,jsx,tsx,mdx}',
+          './components/**/*.{js,ts,jsx,tsx,mdx}',
+          './app/**/*.{js,ts,jsx,tsx,mdx}',
+        ],
+    theme: {
+          extend: {
+                  fontFamily: {
+                            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                  },
+                  colors: {
+                            primary: {
+                                        50:  '#eef2ff',
+                                        100: '#e0e7ff',
+                                        200: '#c7d2fe',
+                                        500: '#6366f1',
+                                        600: '#4f46e5',
+                                        700: '#4338ca',
+                                        DEFAULT: '#6366f1',
+                            },
+                            sidebar: {
+                                        bg:     '#0f172a',
+                                        hover:  '#1e293b',
+                                        active: '#1e293b',
+                                        text:   'rgba(255,255,255,0.55)',
+                                        'text-active': '#ffffff',
+                            },
+                            gray: {
+                                        50:  '#f8fafc',
+                                        100: '#f1f5f9',
+                                        200: '#e2e8f0',
+                                        300: '#cbd5e1',
+                                        400: '#94a3b8',
+                                        500: '#64748b',
+                                        600: '#475569',
+                                        700: '#334155',
+                                        800: '#1e293b',
+                                        900: '#0f172a',
+                            },
+                            surface:    '#ffffff',
+                            background: '#f8fafc',
+                            border:     '#e2e8f0',
+                            'text-primary':   '#0f172a',
+                            'text-secondary': '#64748b',
+                            'text-muted':     '#94a3b8',
+                            success: { DEFAULT: '#10b981', light: '#d1fae5', dark: '#065f46' },
+                            warning: { DEFAULT: '#f59e0b', light: '#fef3c7', dark: '#92400e' },
+                            danger:  { DEFAULT: '#ef4444', light: '#fee2e2', dark: '#991b1b' },
+                            info:    { DEFAULT: '#3b82f6', light: '#dbeafe', dark: '#1e40af' },
+                  },
+                  borderRadius: {
+                            sm: '4px',
+                            DEFAULT: '6px',
+                            md: '8px',
+                            lg: '12px',
+                            xl: '16px',
+                            full: '9999px',
+                  },
+                  boxShadow: {
+                            xs:  '0 1px 2px rgba(15,23,42,0.05)',
+                            sm:  '0 1px 3px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04)',
+                            DEFAULT: '0 4px 6px rgba(15,23,42,0.06), 0 2px 4px rgba(15,23,42,0.04)',
+                            md:  '0 4px 12px rgba(15,23,42,0.10), 0 2px 6px rgba(15,23,42,0.04)',
+                            lg:  '0 10px 25px rgba(15,23,42,0.12), 0 4px 10px rgba(15,23,42,0.06)',
+                            none: 'none',
+                  },
+          },
     },
-  },
-  plugins: [],
+    plugins: [],
 }
