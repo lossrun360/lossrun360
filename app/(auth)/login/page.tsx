@@ -35,7 +35,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: '#f8fafc' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', background: '#f8fafc', fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* Left branding panel */}
       <div
         style={{
@@ -50,24 +50,17 @@ export default function LoginPage() {
         }}
         className="login-panel"
       >
-        {/* Subtle grid pattern */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
 
         <div style={{ position: 'relative' }}>
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '64px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-                <path d="M3 2h7l4 4v8H3V2z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
-                <path d="M10 2v4h4M5 8h6M5 11h4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <span style={{ color: '#fff', fontWeight: '700', fontSize: '17px', letterSpacing: '-0.3px' }}>
-              LossRun<span style={{ color: '#818cf8' }}>360</span>
+          <div style={{ marginBottom: '64px' }}>
+            <span style={{ fontWeight: 900, fontSize: '22px', letterSpacing: '-0.5px', color: '#fff' }}>
+              LossRun<span style={{ color: '#1c6edd' }}>360</span>
             </span>
           </div>
 
-          <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#fff', lineHeight: 1.2, letterSpacing: '-0.8px', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '32px', fontWeight: 700, color: '#fff', lineHeight: 1.2, letterSpacing: '-0.8px', marginBottom: '16px' }}>
             Loss run requests,<br />done in minutes.
           </h2>
           <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: '40px' }}>
@@ -82,12 +75,12 @@ export default function LoginPage() {
               '500+ carrier database',
             ].map((feat) => (
               <div key={feat} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '20px', height: '20px', borderRadius: '6px', background: 'rgba(99,102,241,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: '20px', height: '20px', borderRadius: '6px', background: 'rgba(28,110,221,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5l2 2 4-4" stroke="#818cf8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2 5l2 2 4-4" stroke="#60a5fa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontWeight: '500' }}>{feat}</span>
+                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{feat}</span>
               </div>
             ))}
           </div>
@@ -101,21 +94,15 @@ export default function LoginPage() {
       {/* Right login panel */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px' }}>
         {/* Mobile logo */}
-        <div style={{ marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-              <path d="M3 2h7l4 4v8H3V2z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
-              <path d="M10 2v4h4M5 8h6M5 11h4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <span style={{ fontWeight: '700', fontSize: '16px', color: '#0f172a', letterSpacing: '-0.3px' }}>
-            LossRun<span style={{ color: '#6366f1' }}>360</span>
+        <div style={{ marginBottom: '40px' }}>
+          <span style={{ fontWeight: 900, fontSize: '22px', letterSpacing: '-0.5px', color: '#0f172a' }}>
+            LossRun<span style={{ color: '#1c6edd' }}>360</span>
           </span>
         </div>
 
         <div style={{ width: '100%', maxWidth: '380px' }}>
           <div style={{ marginBottom: '28px' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.5px', margin: 0 }}>Welcome back</h1>
+            <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', letterSpacing: '-0.5px', margin: 0 }}>Welcome back</h1>
             <p style={{ fontSize: '14px', color: '#64748b', marginTop: '6px' }}>Sign in to your agency account</p>
           </div>
 
@@ -135,7 +122,7 @@ export default function LoginPage() {
                   autoComplete="email"
                   autoFocus
                   style={{ width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', color: '#0f172a', background: '#f8fafc', outline: 'none', boxSizing: 'border-box' }}
-                  onFocus={(e) => { e.currentTarget.style.border = '1px solid #6366f1'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)' }}
+                  onFocus={(e) => { e.currentTarget.style.border = '1px solid #1c6edd'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(28,110,221,0.1)' }}
                   onBlur={(e) => { e.currentTarget.style.border = '1px solid #e2e8f0'; e.currentTarget.style.boxShadow = 'none' }}
                 />
               </div>
@@ -145,7 +132,7 @@ export default function LoginPage() {
                   <label style={{ fontSize: '13px', fontWeight: '500', color: '#374151' }} htmlFor="password">
                     Password
                   </label>
-                  <Link href="/forgot-password" style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none', fontWeight: '500' }}>
+                  <Link href="/forgot-password" style={{ fontSize: '12px', color: '#1c6edd', textDecoration: 'none', fontWeight: '500' }}>
                     Forgot password?
                   </Link>
                 </div>
@@ -158,7 +145,7 @@ export default function LoginPage() {
                   required
                   autoComplete="current-password"
                   style={{ width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', color: '#0f172a', background: '#f8fafc', outline: 'none', boxSizing: 'border-box' }}
-                  onFocus={(e) => { e.currentTarget.style.border = '1px solid #6366f1'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)' }}
+                  onFocus={(e) => { e.currentTarget.style.border = '1px solid #1c6edd'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(28,110,221,0.1)' }}
                   onBlur={(e) => { e.currentTarget.style.border = '1px solid #e2e8f0'; e.currentTarget.style.boxShadow = 'none' }}
                 />
               </div>
@@ -166,9 +153,9 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                style={{ width: '100%', padding: '10px', borderRadius: '8px', background: loading ? '#a5b4fc' : '#6366f1', color: '#fff', fontSize: '14px', fontWeight: '600', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.15s', boxShadow: '0 1px 3px rgba(99,102,241,0.3)' }}
-                onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#4f46e5' }}
-                onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = '#6366f1' }}
+                style={{ width: '100%', padding: '10px', borderRadius: '8px', background: loading ? '#93c5fd' : '#1c6edd', color: '#fff', fontSize: '14px', fontWeight: '600', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.15s', boxShadow: '0 1px 3px rgba(28,110,221,0.3)' }}
+                onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#1557c0' }}
+                onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = '#1c6edd' }}
               >
                 {loading ? 'Signing in...' : 'Sign in'}
               </button>
@@ -191,7 +178,7 @@ export default function LoginPage() {
 
           <p style={{ textAlign: 'center', fontSize: '13px', color: '#64748b', marginTop: '20px' }}>
             Don&apos;t have an account?{' '}
-            <Link href="/register" style={{ color: '#6366f1', fontWeight: '600', textDecoration: 'none' }}>
+            <Link href="/register" style={{ color: '#1c6edd', fontWeight: '600', textDecoration: 'none' }}>
               Start free trial
             </Link>
           </p>
@@ -199,6 +186,8 @@ export default function LoginPage() {
       </div>
 
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        * { box-sizing: border-box; }
         @media (min-width: 1024px) {
           .login-panel { display: flex !important; }
         }
