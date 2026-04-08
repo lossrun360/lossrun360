@@ -23,14 +23,14 @@ export function TopNav() {
     <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', height: '56px', display: 'flex', alignItems: 'center', paddingLeft: '24px', paddingRight: '24px', position: 'sticky', top: 0, zIndex: 40 }}>
       {/* Logo */}
       <Link href="/requests" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', marginRight: '32px', flexShrink: 0 }}>
-        <div style={{ width: '30px', height: '30px', background: '#6366f1', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '30px', height: '30px', background: '#1c6edd', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
             <path d="M3 12L6 4L9 9L11 6L14 12H3Z" fill="white" strokeWidth="0"/>
             <circle cx="11.5" cy="4.5" r="1.5" fill="rgba(255,255,255,0.7)"/>
           </svg>
         </div>
         <span style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.3px' }}>
-          LossRun<span style={{ color: '#6366f1' }}>360</span>
+          LossRun<span style={{ color: '#1c6edd' }}>360</span>
         </span>
       </Link>
 
@@ -47,7 +47,7 @@ export function TopNav() {
                 borderRadius: '3px',
                 fontSize: '13.5px',
                 fontWeight: isActive ? '600' : '500',
-                color: isActive ? '#6366f1' : '#64748b',
+                color: isActive ? '#1c6edd' : '#64748b',
                 textDecoration: 'none',
                 background: isActive ? '#eef2ff' : 'transparent'
               }}>
@@ -63,7 +63,7 @@ export function TopNav() {
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 8px 5px 5px', background: 'transparent', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>
-            <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#6366f1', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '600', flexShrink: 0 }}>
+            <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#1c6edd', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '600', flexShrink: 0 }}>
               {initials}
             </div>
             <span style={{ fontSize: '13px', fontWeight: '500', color: '#0f172a', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
