@@ -276,3 +276,7 @@ h4 { font-size: 14px; font-weight: 600; line-height: 1.4; }
 @media (min-width: 1024px) {
   .register-panel { display: flex !important; }
   }
+  /* ─── Login page responsive ───────────────────────────── */
+  @media (min-width: 1024px) {
+    .login-panel { display: flex !important; }
+    }
