@@ -195,7 +195,7 @@ export default function LandingPage() {
                                                                                                                                     popular: false,
                                                                                                                                           },
             ].map(plan => (
-              <div key={plan.name} style={{ background: '#fff', borderRadius: '16px', padding: '32px', border: plan.popular ? '2px solid #1c6edd' : '1px solid #e2e8f0', position: 'relative' as const }}>
+              <div key={plan.name} style={{ display: 'flex', flexDirection: 'column' as const, background: '#fff', borderRadius: '16px', padding: '32px', border: plan.popular ? '2px solid #1c6edd' : '1px solid #e2e8f0', position: 'relative' as const }}>
                 {plan.popular && (
                   <div style={{ position: 'absolute' as const, top: '-13px', left: '50%', transform: 'translateX(-50%)', background: '#1c6edd', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '3px 14px', borderRadius: '999px', letterSpacing: '0.06em', textTransform: 'uppercase' as const, whiteSpace: 'nowrap' as const }}>Most Popular</div>
                 )}
@@ -215,7 +215,7 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
-                <Link href="/register" style={{ display: 'block', textAlign: 'center' as const, padding: '11px', borderRadius: '8px', background: plan.popular ? '#1c6edd' : '#f8fafc', color: plan.popular ? '#fff' : '#0f172a', textDecoration: 'none', fontWeight: 600, fontSize: '14px', border: plan.popular ? 'none' : '1px solid #e2e8f0' }}>
+                <Link href="/register" style={{ display: 'block', textAlign: 'center' as const, marginTop: 'auto', padding: '11px', borderRadius: '8px', background: plan.popular ? '#1c6edd' : '#f8fafc', color: plan.popular ? '#fff' : '#0f172a', textDecoration: 'none', fontWeight: 600, fontSize: '14px', border: plan.popular ? 'none' : '1px solid #e2e8f0' }}>
                   Start free trial
                 </Link>
               </div>
