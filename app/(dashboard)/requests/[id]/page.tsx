@@ -19,7 +19,7 @@ const STATUS_STYLE: Record<string, { color: string; bg: string }> = {
   DRAFT: { color: '#92400e', bg: '#fef3c7' },
   PENDING_SIGNATURE: { color: '#1e40af', bg: '#dbeafe' },
   SIGNED: { color: '#065f46', bg: '#d1fae5' },
-  SENT_TO_CARRIER: { color: '#6b21a8', bg: '#f3e8ff' },
+  SENT_TO_CARRIER: { color: '#1557c0', bg: '#dbeafe' },
   COMPLETED: { color: '#065f46', bg: '#d1fae5' },
   CANCELLED: { color: '#991b1b', bg: '#fee2e2' },
 }
@@ -103,7 +103,7 @@ export default function RequestDetailPage() {
       <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
         <div style={{ ...card, padding: '48px', textAlign: 'center' }}>
           <p style={{ fontSize: '15px', fontWeight: '600', color: '#0f172a', marginBottom: '12px' }}>Request not found</p>
-          <Link href="/requests" style={{ display: 'inline-block', padding: '8px 16px', background: '#6366f1', color: '#fff', borderRadius: '3px', textDecoration: 'none', fontSize: '13px' }}>Back to Dashboard</Link>
+          <Link href="/requests" style={{ display: 'inline-block', padding: '8px 16px', background: '#1c6edd', color: '#fff', borderRadius: '3px', textDecoration: 'none', fontSize: '13px' }}>Back to Dashboard</Link>
         </div>
       </div>
     )
@@ -116,7 +116,7 @@ export default function RequestDetailPage() {
 
   const btnBase = { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '3px', fontSize: '13px', fontWeight: '500', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
   const btnSecondary = { ...btnBase, background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0' }
-  const btnPrimary = { ...btnBase, background: '#6366f1', color: '#fff' }
+  const btnPrimary = { ...btnBase, background: '#1c6edd', color: '#fff' }
   const btnDanger = { ...btnBase, background: '#fee2e2', color: '#991b1b', width: '100%', justifyContent: 'center' }
 
   return (
@@ -276,7 +276,7 @@ export default function RequestDetailPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {request.timeline.map((t) => (
                   <div key={t.id} style={{ display: 'flex', gap: '10px' }}>
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#6366f1', marginTop: '5px', flexShrink: 0 }} />
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#1c6edd', marginTop: '5px', flexShrink: 0 }} />
                     <div>
                       <p style={{ fontSize: '12px', fontWeight: '500', color: '#0f172a', margin: 0 }}>{t.description || t.event}</p>
                       <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 0' }}>{timeAgo(t.createdAt)}</p>
