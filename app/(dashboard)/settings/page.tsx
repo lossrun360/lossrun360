@@ -124,9 +124,9 @@ export default function SettingsPage() {
   const card: React.CSSProperties = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '24px' }
   const inp: React.CSSProperties = { width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '3px', fontSize: '13px', color: '#0f172a', background: '#f8fafc', outline: 'none', boxSizing: 'border-box' }
   const lbl: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: 500, color: '#64748b', marginBottom: '4px' }
-  const btnP: React.CSSProperties = { padding: '8px 16px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '3px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }
+  const btnP: React.CSSProperties = { padding: '8px 16px', background: '#1c6edd', color: '#fff', border: 'none', borderRadius: '3px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }
   const btnS: React.CSSProperties = { padding: '8px 16px', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '3px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }
-  const btnEdit: React.CSSProperties = { padding: '5px 12px', background: 'transparent', color: '#6366f1', border: '1px solid #6366f1', borderRadius: '3px', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }
+  const btnEdit: React.CSSProperties = { padding: '5px 12px', background: 'transparent', color: '#1c6edd', border: '1px solid #1c6edd', borderRadius: '3px', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }
 
   if (loading) return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '32px 40px' }}>
@@ -309,7 +309,7 @@ export default function SettingsPage() {
                   {subscription.cancelAtPeriodEnd ? 'Cancels' : 'Renews'} {formatDate(subscription.currentPeriodEnd)}
                 </div>
                 {subscription.trialEndAt && subscription.status === 'TRIALING' && (
-                  <div style={{ fontSize: '11px', color: '#6366f1', marginTop: '2px' }}>
+                  <div style={{ fontSize: '11px', color: '#1c6edd', marginTop: '2px' }}>
                     Free trial ends {formatDate(subscription.trialEndAt)}
                   </div>
                 )}
@@ -322,10 +322,10 @@ export default function SettingsPage() {
             const isCurrent = currentTier === plan.tier && isActive
             const isPopular = 'popular' in plan && plan.popular
             return (
-              <div key={plan.tier} style={{ background: '#fff', border: `1px solid ${isPopular ? '#6366f1' : '#e2e8f0'}`, borderRadius: '4px', padding: '20px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: isPopular ? '0 0 0 3px rgba(99,102,241,0.12)' : 'none' }}>
+              <div key={plan.tier} style={{ background: '#fff', border: `1px solid ${isPopular ? '#1c6edd' : '#e2e8f0'}`, borderRadius: '4px', padding: '20px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: isPopular ? '0 0 0 3px rgba(99,102,241,0.12)' : 'none' }}>
                 {isPopular && (
                   <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)' }}>
-                    <span style={{ background: '#6366f1', color: '#fff', fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px', whiteSpace: 'nowrap' }}>Most Popular</span>
+                    <span style={{ background: '#1c6edd', color: '#fff', fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px', whiteSpace: 'nowrap' }}>Most Popular</span>
                   </div>
                 )}
                 <div style={{ marginBottom: '14px' }}>
@@ -351,7 +351,7 @@ export default function SettingsPage() {
                 {isCurrent ? (
                   <div style={{ ...btnS, textAlign: 'center', opacity: 0.7, cursor: 'default' }}>Current Plan ✓</div>
                 ) : (
-                  <button onClick={() => startCheckout(plan.tier)} disabled={!!checkoutLoading} style={{ padding: '8px 16px', background: isPopular ? '#6366f1' : '#f1f5f9', color: isPopular ? '#fff' : '#475569', border: isPopular ? 'none' : '1px solid #e2e8f0', borderRadius: '3px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'center' }}>
+                  <button onClick={() => startCheckout(plan.tier)} disabled={!!checkoutLoading} style={{ padding: '8px 16px', background: isPopular ? '#1c6edd' : '#f1f5f9', color: isPopular ? '#fff' : '#475569', border: isPopular ? 'none' : '1px solid #e2e8f0', borderRadius: '3px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'center' }}>
                     {checkoutLoading === plan.tier ? 'Loading...' : 'Select Plan'}
                   </button>
                 )}
