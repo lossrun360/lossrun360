@@ -1,4 +1,5 @@
 'use client'
+
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -30,6 +31,15 @@ const badge = (color: string, bg: string, text: string) => (
 
 const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', boxShadow: '0 1px 2px rgba(15,23,42,0.05)' }
 
+interface InsurancePolicy {
+  insurerName: string
+  coverageType: string
+  policyNumber: string
+  startDate: string
+  endDate: string
+  isManual?: boolean
+}
+
 export default function RequestDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -39,12 +49,38 @@ export default function RequestDetailPage() {
   const [editMode, setEditMode] = useState(false)
   const [editForm, setEditForm] = useState<Record<string, string>>({})
 
+  // Insurance history state
+  const [insurancePolicies, setInsurancePolicies] = useState<InsurancePolicy[]>([])
+  const [insuranceLoading, setInsuranceLoading] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newPolicy, setNewPolicy] = useState<InsurancePolicy>({
+    insurerName: '',
+    coverageType: 'BIPD',
+    policyNumber: '',
+    startDate: '',
+    endDate: '',
+    isManual: true,
+  })
+
   useEffect(() => {
     fetch(`/api/requests/${params.id}`)
       .then((r) => r.json())
       .then((data) => { setRequest(data); setLoading(false) })
       .catch(() => { toast.error('Failed to load request'); setLoading(false) })
   }, [params.id])
+
+  // Fetch FMCSA insurance history when request loads
+  useEffect(() => {
+    if (!request?.dotNumber) return
+    setInsuranceLoading(true)
+    fetch(`/api/fmcsa-insurance?dot=${encodeURIComponent(request.dotNumber)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.policies) setInsurancePolicies(data.policies)
+      })
+      .catch(() => { /* silently fail */ })
+      .finally(() => setInsuranceLoading(false))
+  }, [request?.dotNumber])
 
   async function action(type: string, body?: object) {
     setActionLoading(type)
@@ -59,8 +95,7 @@ export default function RequestDetailPage() {
       toast.success(data.message || 'Success')
       const updated = await fetch(`/api/requests/${params.id}`).then((r) => r.json())
       setRequest(updated)
-    } catch { toast.error('Action failed') }
-    finally { setActionLoading(null) }
+    } catch { toast.error('Action failed') } finally { setActionLoading(null) }
   }
 
   async function generatePDF() {
@@ -76,8 +111,7 @@ export default function RequestDetailPage() {
       a.click()
       URL.revokeObjectURL(url)
       toast.success('PDF downloaded!')
-    } catch { toast.error('Failed to generate PDF') }
-    finally { setActionLoading(null) }
+    } catch { toast.error('Failed to generate PDF') } finally { setActionLoading(null) }
   }
 
   async function deleteRequest() {
@@ -91,30 +125,58 @@ export default function RequestDetailPage() {
   }
 
   function enterEditMode() {
-      if (!request) return
-          setEditForm({
-                companyName: request.companyName || '', dba: request.dba || '', ownerName: request.ownerName || '',
-                      address: request.address || '', city: request.city || '', state: request.state || '', zip: request.zip || '',
-                            phone: request.phone || '', email: request.email || '', mcNumber: request.mcNumber || '',
-                                  entityType: request.entityType || '', operationType: request.operationType || '',
-                                        totalTrucks: request.totalTrucks?.toString() || '', totalDrivers: request.totalDrivers?.toString() || '',
-                                              insuredEmail: request.insuredEmail || '', notes: (request as any).notes || '',
-                                                  })
-                                                      setEditMode(true)
-                                                        }
+    if (!request) return
+    setEditForm({
+      companyName: request.companyName || '',
+      dba: request.dba || '',
+      ownerName: request.ownerName || '',
+      address: request.address || '',
+      city: request.city || '',
+      state: request.state || '',
+      zip: request.zip || '',
+      phone: request.phone || '',
+      email: request.email || '',
+      insuredEmail: request.insuredEmail || '',
+      notes: (request as any).notes || '',
+    })
+    setEditMode(true)
+  }
 
-                                                          async function saveEdit() {
-                                                              setActionLoading('save')
-                                                                  try {
-                                                                        const res = await fetch(`/api/requests/${params.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editForm) })
-                                                                              if (!res.ok) { toast.error('Failed to save changes'); return }
-                                                                                    const updated = await res.json()
-                                                                                          setRequest(updated)
-                                                                                                setEditMode(false)
-                                                                                                      toast.success('Draft updated!')
-                                                                                                          } catch { toast.error('Failed to save changes') }
-                                                                                                              finally { setActionLoading(null) }
-                                                                                                                }
+  async function saveEdit() {
+    setActionLoading('save')
+    try {
+      const res = await fetch(`/api/requests/${params.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      })
+      if (!res.ok) { toast.error('Failed to save changes'); return }
+      const updated = await res.json()
+      setRequest(updated)
+      setEditMode(false)
+      toast.success('Draft updated!')
+    } catch { toast.error('Failed to save changes') } finally { setActionLoading(null) }
+  }
+
+  function addManualPolicy() {
+    if (!newPolicy.insurerName || !newPolicy.startDate) {
+      toast.error('Insurer name and start date are required')
+      return
+    }
+    setInsurancePolicies(prev => [
+      { ...newPolicy, isManual: true },
+      ...prev,
+    ])
+    setNewPolicy({ insurerName: '', coverageType: 'BIPD', policyNumber: '', startDate: '', endDate: '', isManual: true })
+    setShowAddForm(false)
+    toast.success('Policy added')
+  }
+
+  function removePolicy(index: number) {
+    setInsurancePolicies(prev => prev.filter((_, i) => i !== index))
+    toast.success('Policy removed')
+  }
+
   if (loading) {
     return (
       <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
@@ -146,6 +208,12 @@ export default function RequestDetailPage() {
   const btnPrimary = { ...btnBase, background: '#1c6edd', color: '#fff' }
   const btnDanger = { ...btnBase, background: '#fee2e2', color: '#991b1b', width: '100%', justifyContent: 'center' }
 
+  const inp: React.CSSProperties = {
+    display: 'block', width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0',
+    borderRadius: '4px', fontSize: '13px', color: '#0f172a', background: '#fff',
+    outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit'
+  }
+
   return (
     <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
       {/* Header */}
@@ -163,15 +231,15 @@ export default function RequestDetailPage() {
             {actionLoading === 'pdf' ? 'Generating...' : 'Download PDF'}
           </button>
           {request.status === 'DRAFT' && !editMode && (
-                      <button onClick={enterEditMode} style={btnSecondary}>Edit Draft</button>
-                                )}
-                                          {editMode && (
-                                                      <>
-                                                                    <button onClick={saveEdit} disabled={!!actionLoading} style={btnPrimary}>{actionLoading === 'save' ? 'Saving...' : 'Save Changes'}</button>
-                                                                                  <button onClick={() => setEditMode(false)} style={btnSecondary}>Cancel</button>
-                                                                                              </>
-                                                                                                        )}
-                                                                                                                  {canSendForSignature && (
+            <button onClick={enterEditMode} style={btnSecondary}>Edit Draft</button>
+          )}
+          {editMode && (
+            <>
+              <button onClick={saveEdit} disabled={!!actionLoading} style={btnPrimary}>{actionLoading === 'save' ? 'Saving...' : 'Save Changes'}</button>
+              <button onClick={() => setEditMode(false)} style={btnSecondary}>Cancel</button>
+            </>
+          )}
+          {canSendForSignature && (
             <button onClick={() => action('send', { type: 'signature' })} disabled={!!actionLoading} style={btnPrimary as any}>
               {actionLoading === 'send' ? 'Sending...' : 'Send for Signature'}
             </button>
@@ -190,27 +258,36 @@ export default function RequestDetailPage() {
       </div>
 
       {editMode && (
-              <div style={{ ...card, padding: '24px', marginTop: '0' }}>
-                        <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase' as const, color: '#94a3b8', marginTop: 0, marginBottom: '20px' }}>Edit Draft</h2>
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                                              {([['companyName','Legal Name'],['dba','DBA'],['ownerName','Owner'],['mcNumber','MC#'],['address','Address'],['city','City'],['state','State'],['zip','ZIP'],['phone','Phone'],['email','Email'],['entityType','Entity Type'],['operationType','Operation'],['totalTrucks','Power Units'],['totalDrivers','Drivers'],['insuredEmail','Insured Email']] as [string,string][]).map(([key, label]) => (
-                                                            <div key={key}>
-                                                                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' as const, letterSpacing: '0.4px' }}>{label}</label>
-                                                                                            <input value={editForm[key] || ''} onChange={(e) => setEditForm(prev => ({ ...prev, [key]: e.target.value }))} style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '13px', color: '#0f172a', background: '#fff', outline: 'none', boxSizing: 'border-box' as const }} />
-                                                                                                          </div>
-                                                                                                                      ))}
-                                                                                                                                  <div style={{ gridColumn: 'span 3' }}>
-                                                                                                                                                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' as const, letterSpacing: '0.4px' }}>Notes</label>
-                                                                                                                                                              <textarea value={editForm['notes'] || ''} onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))} rows={4} style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '13px', color: '#0f172a', background: '#fff', resize: 'vertical' as const, outline: 'none', boxSizing: 'border-box' as const }} />
-                                                                                                                                                                          </div>
-                                                                                                                                                                                    </div>
-                                                                                                                                                                                            </div>
-                                                                                                                                                                                                  )}
-                                                                                                                                                                                                        {/* Main grid */}
+        <div style={{ ...card, padding: '24px', marginTop: '0' }}>
+          <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase' as const, color: '#94a3b8', marginTop: 0, marginBottom: '20px' }}>Edit Draft</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            {([['companyName','Legal Name'],['dba','DBA'],['ownerName','Owner'],['address','Address'],['city','City'],['state','State'],['zip','ZIP'],['phone','Phone'],['email','Email'],['insuredEmail','Insured Email']] as [string,string][]).map(([key, label]) => (
+              <div key={key}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' as const, letterSpacing: '0.4px' }}>{label}</label>
+                <input
+                  value={editForm[key] || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, [key]: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '13px', color: '#0f172a', background: '#fff', outline: 'none', boxSizing: 'border-box' as const }}
+                />
+              </div>
+            ))}
+            <div style={{ gridColumn: 'span 3' }}>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' as const, letterSpacing: '0.4px' }}>Notes</label>
+              <textarea
+                value={editForm['notes'] || ''}
+                onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
+                rows={4}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '13px', color: '#0f172a', background: '#fff', resize: 'vertical' as const, outline: 'none', boxSizing: 'border-box' as const }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main grid */}
       <div style={{ display: editMode ? 'none' : 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', alignItems: 'start' }}>
         {/* Left column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
           {/* Insured Info */}
           <div style={{ ...card, padding: '24px' }}>
             <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '16px', marginTop: 0 }}>Insured Information</h2>
@@ -222,10 +299,6 @@ export default function RequestDetailPage() {
               <InfoField label="Phone" value={request.phone} />
               <InfoField label="Email" value={request.email} />
               <InfoField label="Owner" value={request.ownerName} />
-              <InfoField label="Entity Type" value={request.entityType} />
-              <InfoField label="Operation" value={request.operationType} />
-              <InfoField label="Power Units" value={request.totalTrucks?.toString()} />
-              <InfoField label="Drivers" value={request.totalDrivers?.toString()} />
             </div>
           </div>
 
@@ -257,53 +330,153 @@ export default function RequestDetailPage() {
                       <p style={{ fontSize: '13px', fontWeight: '500', color: '#0f172a', margin: 0 }}>{c.carrierName}</p>
                       {c.carrierEmail && <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 0' }}>{c.carrierEmail}</p>}
                     </div>
-                    {c.status === 'SENT'
-                      ? badge('#065f46', '#d1fae5', 'Sent')
-                      : badge('#475569', '#f1f5f9', c.status || 'Pending')}
+                    {c.status === 'SENT' ? badge('#065f46', '#d1fae5', 'Sent') : badge('#475569', '#f1f5f9', c.status || 'Pending')}
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* FMCSA Insurance History */}
-          {request.history && request.history.length > 0 && (
-            <div style={{ ...card, padding: '24px' }}>
-              <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '16px', marginTop: 0 }}>FMCSA Insurance History</h2>
-              <div>
-                {request.history.map((h, i) => (
-                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < request.history!.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+          {/* FMCSA Liability Insurance History */}
+          <div style={{ ...card, padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>FMCSA Liability Insurance History</h2>
+                {insurancePolicies.length > 0 && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: '999px', fontSize: '11px', fontWeight: '500', background: '#dbeafe', color: '#1e40af' }}>{insurancePolicies.length}</span>
+                )}
+              </div>
+              <button
+                onClick={() => setShowAddForm(!showAddForm)}
+                style={{ fontSize: '12px', color: '#1c6edd', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', fontFamily: 'inherit', fontWeight: '500' }}
+              >
+                {showAddForm ? 'Cancel' : '+ Add Policy'}
+              </button>
+            </div>
+
+            {/* Add Policy Form */}
+            {showAddForm && (
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '14px', marginBottom: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px' }}>Insurer Name *</label>
+                    <input
+                      style={inp}
+                      placeholder="e.g. Progressive Commercial"
+                      value={newPolicy.insurerName}
+                      onChange={(e) => setNewPolicy(prev => ({ ...prev, insurerName: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px' }}>Coverage Type</label>
+                    <select
+                      style={inp}
+                      value={newPolicy.coverageType}
+                      onChange={(e) => setNewPolicy(prev => ({ ...prev, coverageType: e.target.value }))}
+                    >
+                      <option value="BIPD">BIPD</option>
+                      <option value="Auto Liability">Auto Liability</option>
+                      <option value="General Liability">General Liability</option>
+                      <option value="Cargo">Cargo</option>
+                      <option value="Physical Damage">Physical Damage</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px' }}>Policy Number</label>
+                    <input
+                      style={inp}
+                      placeholder="e.g. POL-123456"
+                      value={newPolicy.policyNumber}
+                      onChange={(e) => setNewPolicy(prev => ({ ...prev, policyNumber: e.target.value }))}
+                    />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     <div>
-                      <p style={{ fontSize: '13px', fontWeight: '500', color: '#0f172a', margin: 0 }}>{h.carrierName}</p>
-                      <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 0' }}>{h.policyType}</p>
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px' }}>Start Date *</label>
+                      <input
+                        style={inp}
+                        type="date"
+                        value={newPolicy.startDate}
+                        onChange={(e) => setNewPolicy(prev => ({ ...prev, startDate: e.target.value }))}
+                      />
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{formatDate(h.effectiveDate)} – {formatDate(h.cancellationDate)}</p>
-                      {h.coverageAmount && <p style={{ fontSize: '11px', color: '#059669', fontWeight: '500', margin: '2px 0 0' }}>${Number(h.coverageAmount).toLocaleString()}</p>}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px' }}>End Date</label>
+                      <input
+                        style={inp}
+                        type="date"
+                        value={newPolicy.endDate}
+                        onChange={(e) => setNewPolicy(prev => ({ ...prev, endDate: e.target.value }))}
+                      />
                     </div>
+                  </div>
+                </div>
+                <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={addManualPolicy}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '6px 14px', background: '#1c6edd', color: '#fff', borderRadius: '3px', fontSize: '12px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    Add Policy
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {insuranceLoading ? (
+              <div style={{ padding: '20px', textAlign: 'center' }}>
+                <p style={{ fontSize: '13px', color: '#94a3b8' }}>Loading insurance history from FMCSA...</p>
+              </div>
+            ) : insurancePolicies.length === 0 ? (
+              <p style={{ fontSize: '13px', color: '#94a3b8' }}>No liability insurance records found</p>
+            ) : (
+              <div>
+                {/* Table header */}
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.5fr auto', gap: '8px', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Insurer</span>
+                  <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Coverage</span>
+                  <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Policy #</span>
+                  <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Dates</span>
+                  <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px', width: '24px' }}></span>
+                </div>
+                {insurancePolicies.map((p, i) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.5fr auto', gap: '8px', padding: '10px 0', borderBottom: i < insurancePolicies.length - 1 ? '1px solid #f1f5f9' : 'none', alignItems: 'center' }}>
+                    <div>
+                      <p style={{ fontSize: '13px', fontWeight: '500', color: '#0f172a', margin: 0 }}>{p.insurerName}</p>
+                      {p.isManual && <span style={{ fontSize: '10px', color: '#1c6edd', fontWeight: '500' }}>Manual</span>}
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#475569', margin: 0 }}>{p.coverageType}</p>
+                    <p style={{ fontSize: '11px', color: '#475569', margin: 0, fontFamily: 'monospace' }}>{p.policyNumber || 'â'}</p>
+                    <p style={{ fontSize: '12px', color: '#475569', margin: 0 }}>
+                      {p.startDate ? formatDate(p.startDate) : 'â'} â {p.endDate ? formatDate(p.endDate) : 'Present'}
+                    </p>
+                    <button
+                      onClick={() => removePolicy(i)}
+                      title="Remove policy"
+                      style={{ width: '24px', height: '24px', border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '3px', padding: 0 }}
+                      onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
+                      onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
+                    >
+                      &#10005;
+                    </button>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Right sidebar */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
           {/* Status card */}
           <div style={{ ...card, padding: '20px' }}>
             <h3 style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '12px', marginTop: 0 }}>Status</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <SidebarRow label="Request" right={badge(statusStyle.color, statusStyle.bg, STATUS_LABELS[request.status] || request.status)} />
-              <SidebarRow
-                label="Signature"
-                right={badge(
-                  request.signatureStatus === 'SIGNED' ? '#065f46' : request.signatureStatus === 'PENDING' ? '#92400e' : '#991b1b',
-                  request.signatureStatus === 'SIGNED' ? '#d1fae5' : request.signatureStatus === 'PENDING' ? '#fef3c7' : '#fee2e2',
-                  request.signatureStatus || 'N/A'
-                )}
-              />
+              <SidebarRow label="Signature" right={badge(
+                request.signatureStatus === 'SIGNED' ? '#065f46' : request.signatureStatus === 'PENDING' ? '#92400e' : '#991b1b',
+                request.signatureStatus === 'SIGNED' ? '#d1fae5' : request.signatureStatus === 'PENDING' ? '#fef3c7' : '#fee2e2',
+                request.signatureStatus || 'N/A'
+              )} />
               {request.signedAt && <SidebarRow label="Signed" value={formatDate(request.signedAt)} />}
               {request.sentToInsuredAt && <SidebarRow label="Sent to insured" value={timeAgo(request.sentToInsuredAt)} />}
               {request.sentToCarrierAt && <SidebarRow label="Sent to carriers" value={timeAgo(request.sentToCarrierAt)} />}
@@ -357,7 +530,7 @@ function InfoField({ label, value, bold, mono }: { label: string; value?: string
     <div>
       <p style={{ fontSize: '10px', fontWeight: '600', letterSpacing: '0.4px', textTransform: 'uppercase', color: '#94a3b8', margin: '0 0 3px' }}>{label}</p>
       <p style={{ fontSize: '13px', color: '#0f172a', fontWeight: bold ? '600' : '400', fontFamily: mono ? 'monospace' : 'inherit', margin: 0 }}>
-        {value || '—'}
+        {value || 'â'}
       </p>
     </div>
   )
@@ -367,7 +540,7 @@ function SidebarRow({ label, value, right, mono }: { label: string; value?: stri
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
       <span style={{ fontSize: '11px', color: '#94a3b8' }}>{label}</span>
-      {right || <span style={{ fontSize: '11px', fontWeight: '500', color: '#0f172a', fontFamily: mono ? 'monospace' : 'inherit' }}>{value || '—'}</span>}
+      {right || <span style={{ fontSize: '11px', fontWeight: '500', color: '#0f172a', fontFamily: mono ? 'monospace' : 'inherit' }}>{value || 'â'}</span>}
     </div>
   )
 }
