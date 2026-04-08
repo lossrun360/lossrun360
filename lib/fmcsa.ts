@@ -12,7 +12,7 @@
  */
 
 const FMCSA_BASE = 'https://mobile.fmcsa.dot.gov/qc/services'
-const FMCSA_API_KEY = process.env.FMCSA_API_KEY || '107cdeafd28d8921b68e0b76c28d9f418cdc8012'
+const FMCSA_API_KEY = process.env.FMCSA_API_KEY || ''
 
 export interface FMCSACarrier {
   dotNumber: string
@@ -176,7 +176,7 @@ async function fetchFMCSACarrier(dotNumber: string): Promise<FMCSACarrier | null
   if (!res.ok) return null
 
   const data = await res.json()
-  return data?.content?.carrier?.[0] || null
+    return Array.isArray(data?.content?.carrier) ? data.content.carrier[0] : (data?.content?.carrier || null)
 }
 
 async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRecord[]> {
