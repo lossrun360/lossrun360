@@ -9,7 +9,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   DRAFT: { label: 'Draft', color: '#92400e', bg: '#fef3c7' },
   PENDING_SIGNATURE: { label: 'Awaiting Signature', color: '#1e40af', bg: '#dbeafe' },
   SIGNED: { label: 'Signed', color: '#065f46', bg: '#d1fae5' },
-  SENT_TO_CARRIER: { label: 'Sent to Carrier', color: '#6b21a8', bg: '#f3e8ff' },
+  SENT_TO_CARRIER: { label: 'Sent to Carrier', color: '#1557c0', bg: '#dbeafe' },
   COMPLETED: { label: 'Completed', color: '#065f46', bg: '#d1fae5' },
   CANCELLED: { label: 'Cancelled', color: '#991b1b', bg: '#fee2e2' },
 }
@@ -41,7 +41,7 @@ export default async function RequestsPage({
   ])
 
   const metrics = [
-    { label: 'Total Requests', value: totalRequests, iconBg: '#eef2ff', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> },
+    { label: 'Total Requests', value: totalRequests, iconBg: '#eef2ff', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c6edd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> },
     { label: 'Awaiting Signature', value: awaitingSignature, iconBg: '#fef3c7', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> },
     { label: 'Sent to Carriers', value: sentToCarriers, iconBg: '#dbeafe', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> },
     { label: 'Completed This Month', value: completedThisMonth, iconBg: '#d1fae5', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> },
@@ -108,7 +108,7 @@ export default async function RequestsPage({
             ].map((tab) => {
               const isActive = (statusFilter || '') === tab.value
               return (
-                <a key={tab.value} href={tab.value ? '?status=' + tab.value : '/requests'} style={{ padding: '5px 10px', borderRadius: '3px', fontSize: '12px', fontWeight: '500', textDecoration: 'none', background: isActive ? '#6366f1' : 'transparent', color: isActive ? '#fff' : '#64748b', border: isActive ? 'none' : '1px solid transparent' }}>
+                <a key={tab.value} href={tab.value ? '?status=' + tab.value : '/requests'} style={{ padding: '5px 10px', borderRadius: '3px', fontSize: '12px', fontWeight: '500', textDecoration: 'none', background: isActive ? '#1c6edd' : 'transparent', color: isActive ? '#fff' : '#64748b', border: isActive ? 'none' : '1px solid transparent' }}>
                   {tab.label}
                 </a>
               )
