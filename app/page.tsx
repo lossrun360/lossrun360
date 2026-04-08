@@ -243,7 +243,7 @@ export default function LandingPage() {
             LossRun<span style={{ color: '#1c6edd' }}>360</span>
           </span>
           <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
-            &copy; {new Date().getFullYear()} LossRun360. Built for commercial trucking insurance.
+            &copy; 2026 LossRun360. Built for commercial trucking insurance.
           </p>
           <div style={{ display: 'flex', gap: '24px' }}>
             {['Privacy', 'Terms', 'Contact'].map(t => (
@@ -254,7 +254,6 @@ export default function LandingPage() {
       </footer>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         * { box-sizing: border-box; }
         @media (min-width: 768px) {
           .nav-links { display: flex !important; }
