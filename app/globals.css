@@ -272,3 +272,7 @@ h4 { font-size: 14px; font-weight: 600; line-height: 1.4; }
 @media (max-width: 480px) {
   .features-grid { grid-template-columns: 1fr !important; }
 }
+/* ─── Register page responsive ────────────────────────── */
+@media (min-width: 1024px) {
+  .register-panel { display: flex !important; }
+  }

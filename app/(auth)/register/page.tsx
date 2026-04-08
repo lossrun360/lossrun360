@@ -143,7 +143,7 @@ export default function RegisterPage() {
         </div>
 
         <p style={{ position: 'relative', fontSize: '12px', color: 'rgba(255,255,255,0.25)' }}>
-          &copy; {new Date().getFullYear()} LossRun360. All rights reserved.
+          &copy; 2026 LossRun360. All rights reserved.
         </p>
       </div>
 
@@ -318,13 +318,6 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        * { box-sizing: border-box; }
-        @media (min-width: 1024px) {
-          .register-panel { display: flex !important; }
-        }
-      `}</style>
     </div>
   )
 }
