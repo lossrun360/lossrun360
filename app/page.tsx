@@ -253,22 +253,6 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      <style>{`
-        * { box-sizing: border-box; }
-        @media (min-width: 768px) {
-          .nav-links { display: flex !important; }
-        }
-        @media (max-width: 767px) {
-          .stats-grid { grid-template-columns: 1fr 1fr !important; }
-          .steps-grid { grid-template-columns: 1fr !important; }
-          .features-grid { grid-template-columns: 1fr 1fr !important; }
-          .pricing-grid { grid-template-columns: 1fr !important; }
-        }
-        @media (max-width: 480px) {
-          .features-grid { grid-template-columns: 1fr !important; }
-        }
-        a:hover { opacity: 0.85; }
-      `}</style>
     </div>
   )
 }
