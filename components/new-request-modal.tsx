@@ -119,7 +119,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
   const card: React.CSSProperties = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '20px' }
   const inp: React.CSSProperties = { display: 'block', width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '3px', fontSize: '13px', color: '#0f172a', background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }
   const lbl: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: '500', color: '#475569', marginBottom: '5px' }
-  const btnP: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 16px', background: '#6366f1', color: '#fff', borderRadius: '3px', fontSize: '13px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+  const btnP: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 16px', background: '#1c6edd', color: '#fff', borderRadius: '3px', fontSize: '13px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
   const btnS: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 16px', background: '#f1f5f9', color: '#475569', borderRadius: '3px', fontSize: '13px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
 
   return (
@@ -218,7 +218,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                 <div style={card}>
                   <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', margin: '0 0 10px' }}>
                     Insurance History from FMCSA{' '}
-                    <span style={{ marginLeft: '6px', background: '#ede9fe', color: '#6366f1', fontSize: '10px', fontWeight: '600', padding: '1px 7px', borderRadius: '4px' }}>{lookupResult.insuranceHistory.length} records</span>
+                    <span style={{ marginLeft: '6px', background: '#ede9fe', color: '#1c6edd', fontSize: '10px', fontWeight: '600', padding: '1px 7px', borderRadius: '4px' }}>{lookupResult.insuranceHistory.length} records</span>
                   </h4>
                   {lookupResult.insuranceHistory.map((h, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < lookupResult.insuranceHistory!.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
@@ -257,7 +257,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
                   {carriers.map((carrier) => (
                     <label key={carrier.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '3px', border: `1px solid ${selectedCarrierIds.includes(carrier.id) ? 'rgba(99,102,241,0.4)' : '#e2e8f0'}`, background: selectedCarrierIds.includes(carrier.id) ? 'rgba(99,102,241,0.04)' : '#fff', cursor: 'pointer' }}>
-                      <input type="checkbox" style={{ width: '14px', height: '14px', accentColor: '#6366f1' }} checked={selectedCarrierIds.includes(carrier.id)} onChange={() => toggleCarrier(carrier.id)} />
+                      <input type="checkbox" style={{ width: '14px', height: '14px', accentColor: '#1c6edd' }} checked={selectedCarrierIds.includes(carrier.id)} onChange={() => toggleCarrier(carrier.id)} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: '12px', fontWeight: '500', color: '#0f172a', margin: 0 }}>{carrier.name}</p>
                         {carrier.lossRunEmail && <p style={{ fontSize: '11px', color: '#64748b', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{carrier.lossRunEmail}</p>}
@@ -277,7 +277,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                     ))}
                   </div>
                 )}
-                <button type="button" onClick={addCustomCarrier} style={{ marginTop: '10px', fontSize: '12px', color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>+ Add custom carrier</button>
+                <button type="button" onClick={addCustomCarrier} style={{ marginTop: '10px', fontSize: '12px', color: '#1c6edd', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>+ Add custom carrier</button>
               </div>
 
               <div style={{ display: 'flex', gap: '8px' }}>
