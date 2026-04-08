@@ -36,6 +36,8 @@ export default function RequestDetailPage() {
   const [request, setRequest] = useState<LossRunRequest | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [editMode, setEditMode] = useState(false)
+  const [editForm, setEditForm] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetch(`/api/requests/${params.id}`)
@@ -88,6 +90,31 @@ export default function RequestDetailPage() {
     } catch { toast.error('Failed to delete'); setActionLoading(null) }
   }
 
+  function enterEditMode() {
+      if (!request) return
+          setEditForm({
+                companyName: request.companyName || '', dba: request.dba || '', ownerName: request.ownerName || '',
+                      address: request.address || '', city: request.city || '', state: request.state || '', zip: request.zip || '',
+                            phone: request.phone || '', email: request.email || '', mcNumber: request.mcNumber || '',
+                                  entityType: request.entityType || '', operationType: request.operationType || '',
+                                        totalTrucks: request.totalTrucks?.toString() || '', totalDrivers: request.totalDrivers?.toString() || '',
+                                              insuredEmail: request.insuredEmail || '', notes: (request as any).notes || '',
+                                                  })
+                                                      setEditMode(true)
+                                                        }
+
+                                                          async function saveEdit() {
+                                                              setActionLoading('save')
+                                                                  try {
+                                                                        const res = await fetch(`/api/requests/${params.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editForm) })
+                                                                              if (!res.ok) { toast.error('Failed to save changes'); return }
+                                                                                    const updated = await res.json()
+                                                                                          setRequest(updated)
+                                                                                                setEditMode(false)
+                                                                                                      toast.success('Draft updated!')
+                                                                                                          } catch { toast.error('Failed to save changes') }
+                                                                                                              finally { setActionLoading(null) }
+                                                                                                                }
   if (loading) {
     return (
       <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
@@ -135,7 +162,16 @@ export default function RequestDetailPage() {
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2h8l2 2v9H2V2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M8 2v3h3M4 7h5M4 9.5h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
             {actionLoading === 'pdf' ? 'Generating...' : 'Download PDF'}
           </button>
-          {canSendForSignature && (
+          {request.status === 'DRAFT' && !editMode && (
+                      <button onClick={enterEditMode} style={btnSecondary}>Edit Draft</button>
+                                )}
+                                          {editMode && (
+                                                      <>
+                                                                    <button onClick={saveEdit} disabled={!!actionLoading} style={btnPrimary}>{actionLoading === 'save' ? 'Saving...' : 'Save Changes'}</button>
+                                                                                  <button onClick={() => setEditMode(false)} style={btnSecondary}>Cancel</button>
+                                                                                              </>
+                                                                                                        )}
+                                                                                                                  {canSendForSignature && (
             <button onClick={() => action('send', { type: 'signature' })} disabled={!!actionLoading} style={btnPrimary as any}>
               {actionLoading === 'send' ? 'Sending...' : 'Send for Signature'}
             </button>
@@ -153,8 +189,25 @@ export default function RequestDetailPage() {
         </div>
       </div>
 
-      {/* Main grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', alignItems: 'start' }}>
+      {editMode && (
+              <div style={{ ...card, padding: '24px', marginTop: '0' }}>
+                        <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase' as const, color: '#94a3b8', marginTop: 0, marginBottom: '20px' }}>Edit Draft</h2>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                                              {([['companyName','Legal Name'],['dba','DBA'],['ownerName','Owner'],['mcNumber','MC#'],['address','Address'],['city','City'],['state','State'],['zip','ZIP'],['phone','Phone'],['email','Email'],['entityType','Entity Type'],['operationType','Operation'],['totalTrucks','Power Units'],['totalDrivers','Drivers'],['insuredEmail','Insured Email']] as [string,string][]).map(([key, label]) => (
+                                                            <div key={key}>
+                                                                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' as const, letterSpacing: '0.4px' }}>{label}</label>
+                                                                                            <input value={editForm[key] || ''} onChange={(e) => setEditForm(prev => ({ ...prev, [key]: e.target.value }))} style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '13px', color: '#0f172a', background: '#fff', outline: 'none', boxSizing: 'border-box' as const }} />
+                                                                                                          </div>
+                                                                                                                      ))}
+                                                                                                                                  <div style={{ gridColumn: 'span 3' }}>
+                                                                                                                                                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' as const, letterSpacing: '0.4px' }}>Notes</label>
+                                                                                                                                                              <textarea value={editForm['notes'] || ''} onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))} rows={4} style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '13px', color: '#0f172a', background: '#fff', resize: 'vertical' as const, outline: 'none', boxSizing: 'border-box' as const }} />
+                                                                                                                                                                          </div>
+                                                                                                                                                                                    </div>
+                                                                                                                                                                                            </div>
+                                                                                                                                                                                                  )}
+                                                                                                                                                                                                        {/* Main grid */}
+      <div style={{ display: editMode ? 'none' : 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', alignItems: 'start' }}>
         {/* Left column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 

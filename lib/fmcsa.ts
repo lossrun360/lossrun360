@@ -12,7 +12,7 @@
  */
 
 const FMCSA_BASE = 'https://mobile.fmcsa.dot.gov/qc/services'
-const FMCSA_API_KEY = process.env.FMCSA_API_KEY || ''
+const FMCSA_API_KEY = process.env.FMCSA_API_KEY || '107cdeafd28d8921b68e0b76c28d9f418cdc8012'
 
 export interface FMCSACarrier {
   dotNumber: string
