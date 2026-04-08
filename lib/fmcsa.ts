@@ -7,7 +7,7 @@
  * Primary endpoints:
  *   GET /safety/carriers/{dotNumber}           — carrier info
  *   GET /safety/carriers/{dotNumber}/cargo-carried
- *   GET /safety/carriers/{dotNumber}/authority-history
+ *   GET /safety/carriers/{dotNumber}/insurance
  *   GET /safety/carriers/name/{name}           — search by name
  */
 
@@ -182,25 +182,26 @@ async function fetchFMCSACarrier(dotNumber: string): Promise<FMCSACarrier | null
 async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRecord[]> {
   // The FMCSA L&I public portal has insurance data
   // We use the authority history endpoint as an approximation
-  const url = `${FMCSA_BASE}/carriers/${dotNumber}/authority-history?webKey=${FMCSA_API_KEY}`
+  const url = `${FMCSA_BASE}/carriers/${dotNumber}/insurance?webKey=${FMCSA_API_KEY}`
   const res = await fetch(url, { next: { revalidate: 3600 } })
 
   if (!res.ok) return []
 
   const data = await res.json()
-  const history = data?.content?.authorityHistory || []
-
+  const history = data?.content?.liabilityInsuranceOnFile || data?.content?.liabilityInsuranceData || data?.content?.insuranceOnFile || []
+  if (!Array.isArray(history)) return []
+  
   // Map FMCSA authority history to our insurance record format
   return history.slice(0, 20).map((h: any) => ({
-    carrierName: h.carrierName || 'Unknown Carrier',
+    carrierName: h.insCompany || h.insuranceCompany || h.carrierName || 'Unknown',
     policyType: 'Auto Liability',
-    insurerName: h.carrierName || 'Unknown',
-    policyNumber: h.policyNumber,
+        insurerName: h.insCompany || h.insuranceCompany || 'Unknown',
+    policyNumber: h.policyNumber || h.policyNbr || null,
     postedDate: h.postedDate,
-    coverageFrom: h.insertedDate,
-    coverageTo: h.cancelledDate,
-    coverageAmount: parseCoverage(h.coverageAmnt),
-  }))
+        coverageFrom: h.coverageFrom || h.effectiveDate || h.postedDate,
+        coverageTo: h.coverageTo || h.cancellationDate || h.cancelledDate,
+      coverageAmount: parseCoverage(h.bipdAmount || h.coverageAmount || h.coverageAmnt),
+      }))
 }
 
 function formatPhone(phone?: string): string | undefined {
