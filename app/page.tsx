@@ -7,20 +7,20 @@ export default function LandingPage() {
     <div style={{ fontFamily: "'Inter', system-ui, sans-serif", background: '#fff', color: '#0f172a' }}>
 
       {/* Nav */}
-      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div style={{ maxWidth: '1120px', margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', height: '60px' }}>
+      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
+        <div style={{ maxWidth: '1120px', margin: '0 auto', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '60px' }}>
           <Link href="/" style={{ textDecoration: 'none' }}>
-            <span style={{ fontWeight: 900, fontSize: '20px', letterSpacing: '-0.5px', color: '#fff' }}>
+            <span style={{ fontWeight: 900, fontSize: '20px', letterSpacing: '-0.5px', color: '#0f172a' }}>
               LossRun<span style={{ color: '#1c6edd' }}>360</span>
             </span>
           </Link>
           <div className="nav-links" style={{ display: 'none', gap: '28px', alignItems: 'center' }}>
             {['Features', 'How It Works', 'Pricing'].map(item => (
-              <a key={item} href={`#${item.toLowerCase().replace(/ /g, '-')}`} style={{ fontSize: '14px', color: 'rgba(255,255,255,0.65)', textDecoration: 'none', fontWeight: 500 }}>{item}</a>
+              <a key={item} href={`#${item.toLowerCase().replace(/ /g, '-')}`} style={{ fontSize: '14px', color: '#64748b', textDecoration: 'none', fontWeight: 500 }}>{item}</a>
             ))}
           </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', alignItems: 'center' }}>
-            <Link href="/login" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.65)', textDecoration: 'none', fontWeight: 500 }}>Sign in</Link>
+            <Link href="/login" style={{ fontSize: '14px', color: '#64748b', textDecoration: 'none', fontWeight: 500 }}>Sign in</Link>
             <Link href="/register" style={{ fontSize: '14px', background: '#1c6edd', color: '#fff', textDecoration: 'none', fontWeight: 600, padding: '7px 16px', borderRadius: '8px' }}>Get started</Link>
           </div>
         </div>
@@ -175,20 +175,25 @@ export default function LandingPage() {
             <h2 style={{ fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 800, color: '#0f172a', margin: '12px 0 8px', letterSpacing: '-0.8px' }}>Simple, transparent pricing</h2>
             <p style={{ fontSize: '15px', color: '#64748b', margin: 0 }}>Start free. Upgrade when you're ready.</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }} className="pricing-grid">
-            {[
-              {
-                name: 'Starter', price: '$79', period: '/month',
-                desc: 'Perfect for solo agents and small agencies.',
-                features: ['25 requests/month', 'FMCSA DOT lookup', 'Automated follow-ups', 'E-signature included', 'Email support'],
-                popular: false,
-              },
-              {
-                name: 'Agency', price: '$199', period: '/month',
-                desc: 'For growing agencies handling more volume.',
-                features: ['Unlimited requests', 'Everything in Starter', 'Custom agency branding', 'Priority support', 'Team members'],
-                popular: true,
-              },
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }} className="pricing-grid">
+            {[{
+                    name: 'Starter', price: '$79', period: '/month',
+                            desc: 'For solo agents and small agencies.',
+                                    features: ['25 loss run requests/month', 'Up to 3 users', 'FMCSA auto-lookup', 'PDF generation', 'Email sending', 'Basic dashboard'],
+                                            popular: false,
+                                                  },
+                                                        {
+                                                                name: 'Professional', price: '$199', period: '/month',
+                                                                        desc: 'For growing agencies handling more volume.',
+                                                                                features: ['150 loss run requests/month', 'Up to 10 users', 'Everything in Starter', 'Carrier database (500+ carriers)', 'Automated reminders', 'Role-based access control', 'Usage analytics', 'Priority support'],
+                                                                                        popular: true,
+                                                                                              },
+                                                                                                    {
+                                                                                                            name: 'Enterprise', price: '$499', period: '/month',
+                                                                                                                    desc: 'For large operations needing full control.',
+                                                                                                                            features: ['Unlimited requests', 'Unlimited users', 'Everything in Professional', 'Custom branding', 'API access', 'Dedicated account manager', 'SLA guarantee', 'Custom integrations'],
+                                                                                                                                    popular: false,
+                                                                                                                                          },
             ].map(plan => (
               <div key={plan.name} style={{ background: '#fff', borderRadius: '16px', padding: '32px', border: plan.popular ? '2px solid #1c6edd' : '1px solid #e2e8f0', position: 'relative' as const }}>
                 {plan.popular && (
