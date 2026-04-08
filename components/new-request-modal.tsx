@@ -23,20 +23,32 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
   const [selectedCarrierIds, setSelectedCarrierIds] = useState<string[]>([])
   const [customCarriers, setCustomCarriers] = useState<{ name: string; email: string }[]>([])
   const [submitting, setSubmitting] = useState(false)
+
   const [form, setForm] = useState({
-    companyName: '', dba: '', ownerName: '', address: '', city: '', state: '', zip: '',
-    phone: '', email: '', mcNumber: '', entityType: '', operationType: '',
-    totalTrucks: '', totalDrivers: '', yearsRequested: '5', policyType: 'Auto Liability',
-    insuredEmail: '', ccEmails: '', notes: '',
+    companyName: '',
+    dba: '',
+    ownerName: '',
+    address: '',
+    city: '',
+    state: '',
+    zip: '',
+    phone: '',
+    email: '',
+    yearsRequested: '5',
+    policyType: 'Auto Liability',
+    insuredEmail: '',
+    ccEmails: '',
+    notes: '',
   })
 
   const resetModal = useCallback(() => {
     setStep(1); setDotInput(''); setLookupLoading(false); setLookupResult(null)
     setCarriers([]); setSelectedCarrierIds([]); setCustomCarriers([]); setSubmitting(false)
-    setForm({ companyName: '', dba: '', ownerName: '', address: '', city: '', state: '', zip: '',
-      phone: '', email: '', mcNumber: '', entityType: '', operationType: '',
-      totalTrucks: '', totalDrivers: '', yearsRequested: '5', policyType: 'Auto Liability',
-      insuredEmail: '', ccEmails: '', notes: '' })
+    setForm({
+      companyName: '', dba: '', ownerName: '', address: '', city: '', state: '', zip: '',
+      phone: '', email: '', yearsRequested: '5', policyType: 'Auto Liability',
+      insuredEmail: '', ccEmails: '', notes: ''
+    })
   }, [])
 
   useEffect(() => {
@@ -65,53 +77,75 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
       const data = await res.json()
       if (!data.found) { toast.error(data.error || 'Carrier not found.'); return }
       setLookupResult(data)
-      setForm((prev) => ({ ...prev, companyName: data.companyName || '', dba: data.dbaName || '',
-        ownerName: data.ownerName || '', address: data.address || '', city: data.city || '',
-        state: data.state || '', zip: data.zip || '', phone: data.phone || '', email: data.email || '',
-        mcNumber: data.mcNumber || '', entityType: data.entityType || '', operationType: data.operationType || '',
-        totalTrucks: data.totalTrucks?.toString() || '', totalDrivers: data.totalDrivers?.toString() || '',
-        insuredEmail: data.email || '' }))
+      setForm((prev) => ({
+        ...prev,
+        companyName: data.companyName || '',
+        dba: data.dbaName || '',
+        ownerName: data.ownerName || '',
+        address: data.address || '',
+        city: data.city || '',
+        state: data.state || '',
+        zip: data.zip || '',
+        phone: data.phone || '',
+        email: data.email || '',
+        insuredEmail: data.email || ''
+      }))
       const carriersRes = await fetch('/api/carriers?specialties=trucking&limit=50')
       const carriersData = await carriersRes.json()
       setCarriers(carriersData.carriers || [])
       setStep(2)
       toast.success(`Found: ${data.companyName}`)
-    } catch { toast.error('Failed to lookup DOT number') }
-    finally { setLookupLoading(false) }
+    } catch { toast.error('Failed to lookup DOT number') } finally { setLookupLoading(false) }
   }
 
   async function handleSubmit() {
     if (!form.companyName || !dotInput) { toast.error('Company name and DOT# are required'); return }
     if (!form.insuredEmail) { toast.error('Insured email is required'); return }
+
     const allCarriers = [
-      ...selectedCarrierIds.map((id) => { const c = carriers.find((x) => x.id === id); return c ? { carrierId: c.id, carrierName: c.name, carrierEmail: c.lossRunEmail } : null }).filter(Boolean),
+      ...selectedCarrierIds.map((id) => {
+        const c = carriers.find((x) => x.id === id)
+        return c ? { carrierId: c.id, carrierName: c.name, carrierEmail: c.lossRunEmail } : null
+      }).filter(Boolean),
       ...customCarriers.filter((c) => c.name),
     ]
+
     setSubmitting(true)
     try {
       const res = await fetch('/api/requests', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dotNumber: dotInput.trim(), mcNumber: form.mcNumber, companyName: form.companyName,
-          dba: form.dba, ownerName: form.ownerName, address: form.address, city: form.city, state: form.state,
-          zip: form.zip, phone: form.phone, email: form.email, entityType: form.entityType,
-          operationType: form.operationType, totalTrucks: form.totalTrucks ? parseInt(form.totalTrucks) : undefined,
-          totalDrivers: form.totalDrivers ? parseInt(form.totalDrivers) : undefined,
-          yearsRequested: parseInt(form.yearsRequested), policyType: form.policyType, insuredEmail: form.insuredEmail,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dotNumber: dotInput.trim(),
+          companyName: form.companyName,
+          dba: form.dba,
+          ownerName: form.ownerName,
+          address: form.address,
+          city: form.city,
+          state: form.state,
+          zip: form.zip,
+          phone: form.phone,
+          email: form.email,
+          yearsRequested: parseInt(form.yearsRequested),
+          policyType: form.policyType,
+          insuredEmail: form.insuredEmail,
           ccEmails: form.ccEmails ? form.ccEmails.split(/[,;\n]/).map((e) => e.trim()).filter(Boolean) : [],
-          notes: form.notes, carriers: allCarriers }),
+          notes: form.notes,
+          carriers: allCarriers
+        }),
       })
       const data = await res.json()
       if (!res.ok) { toast.error(data.error || 'Failed to create request'); return }
       toast.success('Request created!')
       onClose(); resetModal()
       router.push(`/requests/${data.id}`); router.refresh()
-    } catch { toast.error('Failed to create request') }
-    finally { setSubmitting(false) }
+    } catch { toast.error('Failed to create request') } finally { setSubmitting(false) }
   }
 
   const toggleCarrier = (id: string) => setSelectedCarrierIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
   const addCustomCarrier = () => setCustomCarriers((prev) => [...prev, { name: '', email: '' }])
-  const updateCustomCarrier = (i: number, key: 'name' | 'email', value: string) => setCustomCarriers((prev) => { const next = [...prev]; next[i] = { ...next[i], [key]: value }; return next })
+  const updateCustomCarrier = (i: number, key: 'name' | 'email', value: string) =>
+    setCustomCarriers((prev) => { const next = [...prev]; next[i] = { ...next[i], [key]: value }; return next })
   const removeCustomCarrier = (i: number) => setCustomCarriers((prev) => prev.filter((_, idx) => idx !== i))
 
   if (!isOpen) return null
@@ -129,7 +163,6 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
     >
       <style>{'@keyframes spin { to { transform: rotate(360deg) } }'}</style>
       <div style={{ background: '#f8fafc', borderRadius: '4px', width: '100%', maxWidth: '680px', boxShadow: '0 24px 64px rgba(15,23,42,0.22)', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-
         {/* Header */}
         <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '14px 20px', borderRadius: '10px 10px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', margin: 0 }}>New Loss Run Request</h2>
@@ -140,18 +173,21 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
 
         {/* Body */}
         <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
           {/* Step 1 */}
           {step === 1 && (
             <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', margin: '0 0 4px' }}>Enter USDOT Number</h3>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>We'll pull the carrier's info and insurance history from FMCSA.</p>
+                <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>We&#39;ll pull the carrier&#39;s info and insurance history from FMCSA.</p>
               </div>
               <form onSubmit={handleDOTLookup}>
                 <label style={lbl}>USDOT Number</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <input type="text" style={{ ...inp, fontSize: '16px', fontFamily: 'monospace', flex: 1 }} placeholder="e.g. 1234567" value={dotInput} onChange={(e) => setDotInput(e.target.value.replace(/\D/g, ''))} maxLength={10} autoFocus required />
+                  <input
+                    type="text" style={{ ...inp, fontSize: '16px', fontFamily: 'monospace', flex: 1 }}
+                    placeholder="e.g. 1234567" value={dotInput}
+                    onChange={(e) => setDotInput(e.target.value.replace(/\D/g, ''))} maxLength={10} autoFocus required
+                  />
                   <button type="submit" style={{ ...btnP, flexShrink: 0, opacity: lookupLoading ? 0.7 : 1 }} disabled={lookupLoading}>
                     {lookupLoading ? <><span style={{ width: '13px', height: '13px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />Looking...</> : 'Lookup'}
                   </button>
@@ -160,7 +196,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
               <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '3px', padding: '14px' }}>
                 <p style={{ fontSize: '11px', fontWeight: '600', color: '#475569', margin: '0 0 8px' }}>WHAT GETS PULLED AUTOMATICALLY</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
-                  {['Legal company name & DBA', 'Owner / operator name', 'Address & contact info', 'Entity type', 'Fleet size (trucks & drivers)', '5-year insurance history'].map((item) => (
+                  {['Legal company name & DBA', 'Owner / operator name', 'Address & contact info', 'USDOT & operating status', '5-year insurance history', 'FMCSA authority records'].map((item) => (
                     <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#475569' }}>
                       <span style={{ color: '#10b981', fontWeight: '700' }}>&#10003;</span>{item}
                     </div>
@@ -186,7 +222,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                   <div><label style={lbl}>Legal Company Name *</label><input style={inp} value={form.companyName} onChange={(e) => updateForm('companyName', e.target.value)} required /></div>
                   <div><label style={lbl}>DBA / Trade Name</label><input style={inp} value={form.dba} onChange={(e) => updateForm('dba', e.target.value)} placeholder="(if different)" /></div>
                   <div><label style={lbl}>USDOT#</label><input style={{ ...inp, background: '#f8fafc', color: '#64748b', fontFamily: 'monospace' }} value={dotInput} disabled /></div>
-                  <div><label style={lbl}>MC# / FF#</label><input style={inp} value={form.mcNumber} onChange={(e) => updateForm('mcNumber', e.target.value)} placeholder="MC-000000" /></div>
+                  <div><label style={lbl}>Owner / Operator</label><input style={inp} value={form.ownerName} onChange={(e) => updateForm('ownerName', e.target.value)} /></div>
                   <div style={{ gridColumn: '1 / -1' }}><label style={lbl}>Street Address</label><input style={inp} value={form.address} onChange={(e) => updateForm('address', e.target.value)} /></div>
                   <div><label style={lbl}>City</label><input style={inp} value={form.city} onChange={(e) => updateForm('city', e.target.value)} /></div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -194,23 +230,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                     <div><label style={lbl}>ZIP</label><input style={inp} value={form.zip} onChange={(e) => updateForm('zip', e.target.value)} /></div>
                   </div>
                   <div><label style={lbl}>Phone</label><input style={inp} value={form.phone} onChange={(e) => updateForm('phone', e.target.value)} /></div>
-                  <div><label style={lbl}>Owner / Operator</label><input style={inp} value={form.ownerName} onChange={(e) => updateForm('ownerName', e.target.value)} /></div>
-                  <div>
-                    <label style={lbl}>Entity Type</label>
-                    <select style={inp} value={form.entityType} onChange={(e) => updateForm('entityType', e.target.value)}>
-                      <option value="">Select...</option>
-                      {['Sole Proprietor','Partnership','Corporation','Limited Liability Company','Other'].map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={lbl}>Operation Type</label>
-                    <select style={inp} value={form.operationType} onChange={(e) => updateForm('operationType', e.target.value)}>
-                      <option value="">Select...</option>
-                      {['Common Carrier','Contract Carrier','Exempt Carrier','Private Carrier','Broker','Freight Forwarder'].map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div><label style={lbl}># of Power Units</label><input style={inp} type="number" value={form.totalTrucks} onChange={(e) => updateForm('totalTrucks', e.target.value)} min="0" /></div>
-                  <div><label style={lbl}># of Drivers</label><input style={inp} type="number" value={form.totalDrivers} onChange={(e) => updateForm('totalDrivers', e.target.value)} min="0" /></div>
+                  <div><label style={lbl}>Email</label><input style={inp} value={form.email} onChange={(e) => updateForm('email', e.target.value)} /></div>
                 </div>
               </div>
 
@@ -218,7 +238,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                 <div style={card}>
                   <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', margin: '0 0 10px' }}>
                     Insurance History from FMCSA{' '}
-                    <span style={{ marginLeft: '6px', background: '#ede9fe', color: '#1c6edd', fontSize: '10px', fontWeight: '600', padding: '1px 7px', borderRadius: '4px' }}>{lookupResult.insuranceHistory.length} records</span>
+                    <span style={{ marginLeft: '6px', background: '#dbeafe', color: '#1c6edd', fontSize: '10px', fontWeight: '600', padding: '1px 7px', borderRadius: '4px' }}>{lookupResult.insuranceHistory.length} records</span>
                   </h4>
                   {lookupResult.insuranceHistory.map((h, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < lookupResult.insuranceHistory!.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
@@ -256,7 +276,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                 <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 10px' }}>Choose which carriers to send the loss run request to.</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
                   {carriers.map((carrier) => (
-                    <label key={carrier.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '3px', border: `1px solid ${selectedCarrierIds.includes(carrier.id) ? 'rgba(99,102,241,0.4)' : '#e2e8f0'}`, background: selectedCarrierIds.includes(carrier.id) ? 'rgba(99,102,241,0.04)' : '#fff', cursor: 'pointer' }}>
+                    <label key={carrier.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '3px', border: `1px solid ${selectedCarrierIds.includes(carrier.id) ? 'rgba(28,110,221,0.4)' : '#e2e8f0'}`, background: selectedCarrierIds.includes(carrier.id) ? 'rgba(28,110,221,0.04)' : '#fff', cursor: 'pointer' }}>
                       <input type="checkbox" style={{ width: '14px', height: '14px', accentColor: '#1c6edd' }} checked={selectedCarrierIds.includes(carrier.id)} onChange={() => toggleCarrier(carrier.id)} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: '12px', fontWeight: '500', color: '#0f172a', margin: 0 }}>{carrier.name}</p>
@@ -265,6 +285,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                     </label>
                   ))}
                 </div>
+
                 {customCarriers.length > 0 && (
                   <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <p style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Custom Carriers</p>
@@ -296,7 +317,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                   <div>
                     <p style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 3px' }}>Insured</p>
                     <p style={{ fontWeight: '600', color: '#0f172a', margin: '0 0 2px' }}>{form.companyName}</p>
-                    <p style={{ color: '#64748b', margin: '0 0 1px', fontSize: '12px' }}>DOT# {dotInput}{form.mcNumber ? ` Â· ${form.mcNumber}` : ''}</p>
+                    <p style={{ color: '#64748b', margin: '0 0 1px', fontSize: '12px' }}>DOT# {dotInput}</p>
                     <p style={{ color: '#64748b', margin: 0, fontSize: '12px' }}>{[form.city, form.state].filter(Boolean).join(', ')}</p>
                   </div>
                   <div>
