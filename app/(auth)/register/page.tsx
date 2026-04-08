@@ -108,9 +108,11 @@ export default function RegisterPage() {
         <div style={{ position: 'relative' }}>
           {/* Logo */}
           <div style={{ marginBottom: '64px' }}>
-            <span style={{ fontWeight: 900, fontSize: '22px', letterSpacing: '-0.5px', color: '#fff' }}>
-              LossRun<span style={{ color: '#1c6edd' }}>360</span>
-            </span>
+            <Link href="/" style={{ textDecoration: 'none' }}>
+              <span style={{ fontWeight: 900, fontSize: '22px', letterSpacing: '-0.5px', color: '#fff' }}>
+                LossRun<span style={{ color: '#1c6edd' }}>360</span>
+              </span>
+            </Link>
           </div>
 
           <h2 style={{ fontSize: '32px', fontWeight: 700, color: '#fff', lineHeight: 1.2, letterSpacing: '-0.8px', marginBottom: '16px' }}>
@@ -149,9 +151,11 @@ export default function RegisterPage() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', overflowY: 'auto' }}>
         {/* Mobile logo */}
         <div style={{ marginBottom: '32px' }}>
-          <span style={{ fontWeight: 900, fontSize: '22px', letterSpacing: '-0.5px', color: '#0f172a' }}>
-            LossRun<span style={{ color: '#1c6edd' }}>360</span>
-          </span>
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <span style={{ fontWeight: 900, fontSize: '22px', letterSpacing: '-0.5px', color: '#0f172a' }}>
+              LossRun<span style={{ color: '#1c6edd' }}>360</span>
+            </span>
+          </Link>
         </div>
 
         <div style={{ width: '100%', maxWidth: '400px' }}>
