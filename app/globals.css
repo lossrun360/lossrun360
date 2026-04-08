@@ -258,3 +258,17 @@ h4 { font-size: 14px; font-weight: 600; line-height: 1.4; }
     --primary-rgb: 28 110 221;
   }
 }
+
+/* ─── Landing page responsive ──────────────────────────── */
+@media (min-width: 768px) {
+  .nav-links { display: flex !important; }
+}
+@media (max-width: 767px) {
+  .stats-grid { grid-template-columns: 1fr 1fr !important; }
+  .steps-grid { grid-template-columns: 1fr !important; }
+  .features-grid { grid-template-columns: 1fr 1fr !important; }
+  .pricing-grid { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 480px) {
+  .features-grid { grid-template-columns: 1fr !important; }
+}
