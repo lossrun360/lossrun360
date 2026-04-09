@@ -38,6 +38,8 @@ interface InsurancePolicy {
   startDate: string
   endDate: string
   isManual?: boolean
+  id?: string
+  source?: string
 }
 
 export default function RequestDetailPage() {
@@ -69,19 +71,42 @@ export default function RequestDetailPage() {
       .catch(() => { toast.error('Failed to load request'); setLoading(false) })
   }, [params.id])
 
-  // Fetch FMCSA insurance history when request loads
-  useEffect(() => {
-    if (!request?.dotNumber) return
+  async function loadInsurance() {
+  if (!params?.id) return
+  setInsuranceLoading(true)
+  try {
+    const d = await (await fetch(`/api/requests/${params.id}/insurance`)).json()
+    if (d.history) setInsurancePolicies(d.history.map((h: any) => ({
+      id: h.id, source: h.source,
+      insurerName: h.carrierName || '',
+      coverageType: h.policyType || 'AUTO_LIABILITY',
+      policyNumber: h.policyNumber || '',
+      startDate: h.effectiveDate ? h.effectiveDate.split('T')[0] : '',
+      endDate: h.cancellationDate ? h.cancellationDate.split('T')[0] : '',
+    })))
+  } catch {} finally { setInsuranceLoading(false) }
+  }
+  async function fetchFromFMCSA() {
+    if (!params?.id) return
     setInsuranceLoading(true)
-    fetch(`/api/fmcsa-insurance?dot=${encodeURIComponent(request.dotNumber)}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.policies) setInsurancePolicies(data.policies)
+    try {
+      const r = await fetch(`/api/requests/${params.id}/insurance`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'fetch_fmcsa'}),
       })
-      .catch(() => { /* silently fail */ })
-      .finally(() => setInsuranceLoading(false))
-  }, [request?.dotNumber])
-
+      const d = await r.json()
+      if (d.history) setInsurancePolicies(d.history.map((h: any) => ({
+        id: h.id, source: h.source,
+        insurerName: h.carrierName || '',
+        coverageType: h.policyType || 'AUTO_LIABILITY',
+        policyNumber: h.policyNumber || '',
+        startDate: h.effectiveDate ? h.effectiveDate.split('T')[0] : '',
+        endDate: h.cancellationDate ? h.cancellationDate.split('T')[0] : '',
+      })))
+      toast.success('Loaded from FMCSA')
+    } catch { toast.error('Failed to load from FMCSA') } finally { setInsuranceLoading(false) }
+  }
+  useEffect(() => { if (request?.id) loadInsurance() }, [request?.id])
   async function action(type: string, body?: object) {
     setActionLoading(type)
     try {
@@ -129,7 +154,6 @@ export default function RequestDetailPage() {
     setEditForm({
       companyName: request.companyName || '',
       dba: request.dba || '',
-      ownerName: request.ownerName || '',
       address: request.address || '',
       city: request.city || '',
       state: request.state || '',
@@ -158,25 +182,28 @@ export default function RequestDetailPage() {
     } catch { toast.error('Failed to save changes') } finally { setActionLoading(null) }
   }
 
-  function addManualPolicy() {
-    if (!newPolicy.insurerName || !newPolicy.startDate) {
-      toast.error('Insurer name and start date are required')
-      return
-    }
-    setInsurancePolicies(prev => [
-      { ...newPolicy, isManual: true },
-      ...prev,
-    ])
-    setNewPolicy({ insurerName: '', coverageType: 'BIPD', policyNumber: '', startDate: '', endDate: '', isManual: true })
-    setShowAddForm(false)
-    toast.success('Policy added')
+  async function addManualPolicy() {
+    if (!newPolicy.insurerName || !newPolicy.startDate) { toast.error('Insurer name and start date are required'); return }
+    if (!params?.id) return
+    try {
+      await fetch(`/api/requests/${params.id}/insurance`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action:'manual_add',carrierName:newPolicy.insurerName,policyType:newPolicy.coverageType,policyNumber:newPolicy.policyNumber,effectiveDate:newPolicy.startDate,cancellationDate:newPolicy.endDate}),
+      })
+      await loadInsurance()
+      setNewPolicy({ insurerName: '', coverageType: 'BIPD', policyNumber: '', startDate: '', endDate: '', isManual: true })
+      setShowAddForm(false)
+      toast.success('Policy added')
+    } catch { toast.error('Failed to add policy') }
   }
-
-  function removePolicy(index: number) {
-    setInsurancePolicies(prev => prev.filter((_, i) => i !== index))
-    toast.success('Policy removed')
+  async function removePolicy(p: InsurancePolicy) {
+    if (!params?.id || !p.id) return
+    try {
+      await fetch(`/api/requests/${params.id}/insurance/${p.id}`, { method: 'DELETE' })
+      await loadInsurance()
+      toast.success('Policy removed')
+    } catch { toast.error('Failed to remove policy') }
   }
-
   if (loading) {
     return (
       <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
@@ -261,8 +288,7 @@ export default function RequestDetailPage() {
         <div style={{ ...card, padding: '24px', marginTop: '0' }}>
           <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase' as const, color: '#94a3b8', marginTop: 0, marginBottom: '20px' }}>Edit Draft</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-            {([['companyName','Legal Name'],['dba','DBA'],['ownerName','Owner'],['address','Address'],['city','City'],['state','State'],['zip','ZIP'],['phone','Phone'],['email','Email'],['insuredEmail','Insured Email']] as [string,string][]).map(([key, label]) => (
-              <div key={key}>
+          {[['companyName','Legal Name'],['dba','DBA'],['phone','Phone'],['email','Email']].map(([key, label]) => (              <div key={key}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' as const, letterSpacing: '0.4px' }}>{label}</label>
                 <input
                   value={editForm[key] || ''}
@@ -298,7 +324,6 @@ export default function RequestDetailPage() {
               <InfoField label="Address" value={[request.address, request.city, request.state, request.zip].filter(Boolean).join(', ')} />
               <InfoField label="Phone" value={request.phone} />
               <InfoField label="Email" value={request.email} />
-              <InfoField label="Owner" value={request.ownerName} />
             </div>
           </div>
 
@@ -346,8 +371,9 @@ export default function RequestDetailPage() {
                   <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: '999px', fontSize: '11px', fontWeight: '500', background: '#dbeafe', color: '#1e40af' }}>{insurancePolicies.length}</span>
                 )}
               </div>
-              <button
-                onClick={() => setShowAddForm(!showAddForm)}
+        <button onClick={fetchFromFMCSA} disabled={insuranceLoading} style={{ fontSize: '12px', color: '#1c6edd', background: 'none', border: '1px solid #1c6edd', borderRadius: '4px', padding: '4px 10px', cursor: 'pointer', marginRight: '8px', fontFamily: 'inherit', fontWeight: '500' }}>{insuranceLoading ? 'Loading...' : 'Load from FMCSA'}</button>              
+    <button                
+onClick={() => setShowAddForm(!showAddForm)}
                 style={{ fontSize: '12px', color: '#1c6edd', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', fontFamily: 'inherit', fontWeight: '500' }}
               >
                 {showAddForm ? 'Cancel' : '+ Add Policy'}
@@ -450,8 +476,7 @@ export default function RequestDetailPage() {
                       {p.startDate ? formatDate(p.startDate) : 'â'} â {p.endDate ? formatDate(p.endDate) : 'Present'}
                     </p>
                     <button
-                      onClick={() => removePolicy(i)}
-                      title="Remove policy"
+          onClick={() => removePolicy(p)}                      title="Remove policy"
                       style={{ width: '24px', height: '24px', border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '3px', padding: 0 }}
                       onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
                       onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
