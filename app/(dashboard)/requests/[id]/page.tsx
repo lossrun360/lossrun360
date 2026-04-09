@@ -304,7 +304,8 @@ export default function RequestDetailPage() {
   }
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
+    <div style={{ height: '100%', overflowY: 'auto', padding: '32px 40px' }}>
+    <div style={{ maxWidth: '1440px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <Link href="/requests" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', borderRadius: '3px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b', textDecoration: 'none', flexShrink: 0 }}>
@@ -609,6 +610,7 @@ export default function RequestDetailPage() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   )
 }
