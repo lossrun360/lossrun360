@@ -179,7 +179,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
               <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '3px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ color: '#10b981', fontWeight: '700', fontSize: '15px' }}>&#10003;</span>
                 <p style={{ fontSize: '12px', fontWeight: '600', color: '#10b981', margin: 0 }}>
-                  FMCSA Data Retrieved &mdash; DOT# {dotInput}{operatingStatus ? ` Â· ${operatingStatus}` : ''}
+                  FMCSA Data Retrieved &mdash; DOT# {dotInput}{operatingStatus ? ` · ${operatingStatus}` : ''}
                 </p>
               </div>
 
