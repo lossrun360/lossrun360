@@ -86,7 +86,6 @@ export interface DOTLookupResult {
  */
 export async function lookupByDOT(dotNumber: string): Promise<DOTLookupResult> {
   const cleanDOT = dotNumber.replace(/\D/g, '')
-
   if (!cleanDOT || cleanDOT.length < 5) {
     return { found: false, dotNumber: cleanDOT, error: 'Invalid DOT number format' }
   }
@@ -162,11 +161,11 @@ export async function searchByName(name: string): Promise<DOTLookupResult[]> {
   }
 }
 
-// ─── Private helpers ────────────────────────────────────────────────────────────
+// ─── Private helpers ──────────────────────────────────────────────────────────
 
 async function fetchFMCSACarrier(dotNumber: string): Promise<FMCSACarrier | null> {
   const url = `${FMCSA_BASE}/carriers/${dotNumber}?webKey=${FMCSA_API_KEY}`
-  const res = await fetch(url, { next: { revalidate: 3600 } }) // cache 1hr
+  const res = await fetch(url, { next: { revalidate: 3600 } }) // cache carrier info 1hr
   if (!res.ok) return null
   const data = await res.json()
   return Array.isArray(data?.content?.carrier)
@@ -176,52 +175,39 @@ async function fetchFMCSACarrier(dotNumber: string): Promise<FMCSACarrier | null
 
 async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRecord[]> {
   const url = `${FMCSA_BASE}/carriers/${dotNumber}/insurance?webKey=${FMCSA_API_KEY}`
-  const res = await fetch(url, { next: { revalidate: 3600 } })
+  // Disable caching — insurance data changes and stale empty responses would hide real records
+  const res = await fetch(url, { cache: 'no-store' })
   if (!res.ok) return []
-
   const data = await res.json()
   const content = data?.content || {}
 
-  // Log the raw response keys in development to help diagnose field name issues
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[FMCSA insurance] response keys:', Object.keys(content))
+  // Log the raw response structure to diagnose field name issues
+  console.log('[FMCSA insurance] DOT:', dotNumber, 'content keys:', Object.keys(content))
+  if (content.carrier) {
+    console.log('[FMCSA insurance] carrier keys:', Object.keys(content.carrier))
   }
 
-  // Try every known field name variation for liability insurance records.
-  // The FMCSA mobile API uses "liInsuranceOnFile" in most responses, but
-  // older API versions and different endpoints may use other names.
+  // The FMCSA mobile API nests insurance records under content.carrier (lowercase).
+  // Some API versions use content.Carrier (capitalized) or put records at the top level.
+  // Resolve the nesting once, then check all known field name variants on that object.
+  const carrier = content.carrier || content.Carrier || content
+
+  // Liability / BIPD insurance
   const liabilityRecords: any[] =
-    (Array.isArray(content.liInsuranceOnFile) && content.liInsuranceOnFile.length > 0
-      ? content.liInsuranceOnFile
-      : null) ||
-    (Array.isArray(content.liabilityInsuranceOnFile) && content.liabilityInsuranceOnFile.length > 0
-      ? content.liabilityInsuranceOnFile
-      : null) ||
-    (Array.isArray(content.insuranceOnFile) && content.insuranceOnFile.length > 0
-      ? content.insuranceOnFile
-      : null) ||
-    (Array.isArray(content.liabilityInsuranceData) && content.liabilityInsuranceData.length > 0
-      ? content.liabilityInsuranceData
-      : null) ||
-    // Some responses nest under a Carrier object
-    (Array.isArray(content.Carrier?.liInsuranceOnFile) && content.Carrier.liInsuranceOnFile.length > 0
-      ? content.Carrier.liInsuranceOnFile
-      : null) ||
-    (Array.isArray(content.Carrier?.liabilityInsuranceOnFile) &&
-    content.Carrier.liabilityInsuranceOnFile.length > 0
-      ? content.Carrier.liabilityInsuranceOnFile
-      : null) ||
+    (Array.isArray(carrier.liInsuranceOnFile) && carrier.liInsuranceOnFile.length > 0
+      ? carrier.liInsuranceOnFile : null) ||
+    (Array.isArray(carrier.liabilityInsuranceOnFile) && carrier.liabilityInsuranceOnFile.length > 0
+      ? carrier.liabilityInsuranceOnFile : null) ||
+    (Array.isArray(carrier.insuranceOnFile) && carrier.insuranceOnFile.length > 0
+      ? carrier.insuranceOnFile : null) ||
+    (Array.isArray(carrier.liabilityInsuranceData) && carrier.liabilityInsuranceData.length > 0
+      ? carrier.liabilityInsuranceData : null) ||
     []
 
-  // Also capture cargo insurance records
+  // Cargo insurance
   const cargoRecords: any[] =
-    (Array.isArray(content.cargoInsuranceOnFile) && content.cargoInsuranceOnFile.length > 0
-      ? content.cargoInsuranceOnFile
-      : null) ||
-    (Array.isArray(content.Carrier?.cargoInsuranceOnFile) &&
-    content.Carrier.cargoInsuranceOnFile.length > 0
-      ? content.Carrier.cargoInsuranceOnFile
-      : null) ||
+    (Array.isArray(carrier.cargoInsuranceOnFile) && carrier.cargoInsuranceOnFile.length > 0
+      ? carrier.cargoInsuranceOnFile : null) ||
     []
 
   const allRecords = [...liabilityRecords, ...cargoRecords]
@@ -242,7 +228,7 @@ async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRec
       insurerName: h.insCompany || h.insuranceCompany || h.insName || 'Unknown',
       policyNumber: h.policyNumber || h.policyNbr || null,
       postedDate: h.postedDate || null,
-      // effectiveDate / postedDate is when coverage started; cancelledDate is when it ended
+      // effectiveDate is when coverage started; cancelledDate is when it ended
       coverageFrom: h.effectiveDate || h.coverageFrom || h.postedDate || null,
       coverageTo: h.cancelledDate || h.cancellationDate || h.coverageTo || null,
       coverageAmount: parseCoverage(
@@ -260,17 +246,14 @@ function formatPhone(phone?: string): string | undefined {
   if (!phone) return undefined
   const digits = phone.replace(/\D/g, '')
   if (!digits) return undefined
-
   // Strip leading country code '1' for US numbers
   let tenDigits = digits
   if (digits.length === 11 && digits[0] === '1') {
     tenDigits = digits.slice(1)
   }
-
   if (tenDigits.length === 10) {
     return `(${tenDigits.slice(0, 3)}) ${tenDigits.slice(3, 6)}-${tenDigits.slice(6)}`
   }
-
   // Return original if we can't format it cleanly
   return phone
 }
