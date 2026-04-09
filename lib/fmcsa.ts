@@ -11,7 +11,7 @@
  *   GET /qc/services/carriers/name/{name}             — search by name
  *
  * NOTE: /insurance and /authority-history return 404 for many carriers via the mobile API.
- *       Phone/email are NOT exposed by the carrier snapshot endpoint.
+ *       Phone/email may not always be available from the carrier snapshot endpoint.
  */
 
 const FMCSA_BASE = 'https://mobile.fmcsa.dot.gov/qc/services'
@@ -148,10 +148,10 @@ export async function lookupByDOT(dotNumber: string): Promise<DOTLookupResult> {
       state: carrier.phyState || carrier.mailingState,
       // API field is "phyZipcode", NOT "phyZip"
       zip: carrier.phyZipcode || carrier.phyZip || carrier.mailingZip || carrier.mailingZipcode,
-      // Phone is not returned in the carrier snapshot for most carriers
-      phone: formatPhone(carrier.phyPhone || carrier.telephone),
+      // Phone from FMCSA carrier data (available for some carriers)
+      phone: formatPhone(carrier.phyPhone || carrier.telephone || (carrier as any).phone),
       fax: formatPhone(carrier.fax),
-      email: carrier.email,
+      email: carrier.email || (carrier as any).emailAddress,
       entityType: carrier.entityType,
       operationType,
       operatingStatus,
@@ -300,9 +300,10 @@ async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRec
 /**
  * Format a raw phone number string into (XXX) XXX-XXXX.
  */
-function formatPhone(phone?: string): string | undefined {
-  if (!phone) return undefined
-  const digits = phone.replace(/\D/g, '')
+function formatPhone(phone?: string | number): string | undefined {
+  if (!phone && phone !== 0) return undefined
+  const str = String(phone)
+  const digits = str.replace(/\D/g, '')
   if (!digits) return undefined
 
   let tenDigits = digits
