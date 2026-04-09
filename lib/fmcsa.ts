@@ -5,10 +5,10 @@
  * Free API key: https://ai.fmcsa.dot.gov/API/index.aspx
  *
  * Confirmed working endpoints (as of 2026-04):
- *   GET /qc/services/carriers/{dotNumber}             — carrier snapshot (no phone in response)
- *   GET /qc/services/carriers/{dotNumber}/mc-numbers  — MC/MX docket numbers
- *   GET /qc/services/carriers/{dotNumber}/authority   — operating authority
- *   GET /qc/services/carriers/name/{name}             — search by name
+ *   GET /qc/services/carriers/{dotNumber}             â carrier snapshot (no phone in response)
+ *   GET /qc/services/carriers/{dotNumber}/mc-numbers  â MC/MX docket numbers
+ *   GET /qc/services/carriers/{dotNumber}/authority   â operating authority
+ *   GET /qc/services/carriers/name/{name}             â search by name
  *
  * NOTE: /insurance and /authority-history return 404 for many carriers via the mobile API.
  *       Phone/email may not always be available from the carrier snapshot endpoint.
@@ -16,6 +16,16 @@
 
 const FMCSA_BASE = 'https://mobile.fmcsa.dot.gov/qc/services'
 const FMCSA_API_KEY = process.env.FMCSA_API_KEY || ''
+
+/** Timeout in ms for each FMCSA API call */
+const API_TIMEOUT_MS = 6000
+
+/** Create an AbortSignal that fires after `ms` milliseconds */
+function timeoutSignal(ms: number): AbortSignal {
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), ms)
+  return controller.signal
+}
 
 // Actual shape returned by GET /qc/services/carriers/{dot}
 export interface FMCSACarrier {
@@ -109,10 +119,11 @@ export async function lookupByDOT(dotNumber: string): Promise<DOTLookupResult> {
   }
 
   try {
-    const [carrierRes, insuranceRes, mcRes] = await Promise.allSettled([
+    const [carrierRes, insuranceRes, mcRes, saferRes] = await Promise.allSettled([
       fetchFMCSACarrier(cleanDOT),
       fetchFMCSAInsurance(cleanDOT),
       fetchFMCSAMcNumber(cleanDOT),
+      scrapeSAFERContact(cleanDOT),
     ])
 
     if (carrierRes.status === 'rejected' || !carrierRes.value) {
@@ -124,6 +135,8 @@ export async function lookupByDOT(dotNumber: string): Promise<DOTLookupResult> {
       insuranceRes.status === 'fulfilled' ? insuranceRes.value : []
     const mcNumber =
       mcRes.status === 'fulfilled' ? mcRes.value : null
+    const saferContact =
+      saferRes.status === 'fulfilled' ? saferRes.value : {}
 
     // carrierOperation may come back as an object {carrierOperationCode, carrierOperationDesc}
     const operationType =
@@ -148,10 +161,11 @@ export async function lookupByDOT(dotNumber: string): Promise<DOTLookupResult> {
       state: carrier.phyState || carrier.mailingState,
       // API field is "phyZipcode", NOT "phyZip"
       zip: carrier.phyZipcode || carrier.phyZip || carrier.mailingZip || carrier.mailingZipcode,
-      // Phone from FMCSA carrier data (available for some carriers)
-      phone: formatPhone(carrier.phyPhone || carrier.telephone || (carrier as any).phone),
+      // Phone: prefer FMCSA API data, fall back to SAFER HTML scrape
+      phone: formatPhone(carrier.phyPhone || carrier.telephone || (carrier as any).phone || saferContact.phone),
       fax: formatPhone(carrier.fax),
-      email: carrier.email || (carrier as any).emailAddress,
+      // Email: prefer FMCSA API data, fall back to SAFER HTML scrape
+      email: carrier.email || (carrier as any).emailAddress || saferContact.email,
       entityType: carrier.entityType,
       operationType,
       operatingStatus,
@@ -175,7 +189,7 @@ export async function searchByName(name: string): Promise<DOTLookupResult[]> {
 
   try {
     const url = `${FMCSA_BASE}/carriers/name/${encodeURIComponent(name)}?webKey=${FMCSA_API_KEY}&start=0&size=10`
-    const res = await fetch(url, { next: { revalidate: 300 } })
+    const res = await fetch(url, { next: { revalidate: 300 }, signal: timeoutSignal(API_TIMEOUT_MS) })
 
     if (!res.ok) return []
 
@@ -201,11 +215,11 @@ export async function searchByName(name: string): Promise<DOTLookupResult[]> {
   }
 }
 
-// ─── Private helpers ──────────────────────────────────────────────────────────
+// âââ Private helpers ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 async function fetchFMCSACarrier(dotNumber: string): Promise<FMCSACarrier | null> {
   const url = `${FMCSA_BASE}/carriers/${dotNumber}?webKey=${FMCSA_API_KEY}`
-  const res = await fetch(url, { cache: 'no-store' })
+  const res = await fetch(url, { cache: 'no-store', signal: timeoutSignal(API_TIMEOUT_MS) })
 
   if (!res.ok) return null
 
@@ -223,7 +237,7 @@ async function fetchFMCSACarrier(dotNumber: string): Promise<FMCSACarrier | null
  */
 async function fetchFMCSAMcNumber(dotNumber: string): Promise<string | null> {
   const url = `${FMCSA_BASE}/carriers/${dotNumber}/mc-numbers?webKey=${FMCSA_API_KEY}`
-  const res = await fetch(url, { cache: 'no-store' })
+  const res = await fetch(url, { cache: 'no-store', signal: timeoutSignal(API_TIMEOUT_MS) })
 
   if (!res.ok) return null
 
@@ -238,9 +252,9 @@ async function fetchFMCSAMcNumber(dotNumber: string): Promise<string | null> {
 
 async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRecord[]> {
   const url = `${FMCSA_BASE}/carriers/${dotNumber}/insurance?webKey=${FMCSA_API_KEY}`
-  const res = await fetch(url, { cache: 'no-store' })
+  const res = await fetch(url, { cache: 'no-store', signal: timeoutSignal(API_TIMEOUT_MS) })
 
-  // 404 is normal — many carriers don't have this endpoint
+  // 404 is normal â many carriers don't have this endpoint
   if (!res.ok) return []
 
   const data = await res.json()
@@ -283,7 +297,7 @@ async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRec
         : 'BIPD/Primary'
 
     return {
-      carrierName: h.insCompany || h.insuranceCompany || h.insName || h.carrierName || 'Unknown',
+      carrierName: h.insCompany || h.insuranceCompany || h.insName || h.carrierName ||Unknown',
       policyType: coverageType,
       insurerName: h.insCompany || h.insuranceCompany || h.insName || 'Unknown',
       policyNumber: h.policyNumber || h.policyNbr || null,
@@ -295,6 +309,49 @@ async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRec
       ),
     }
   })
+}
+
+/**
+ * Scrape the SAFER website HTML to extract phone and email.
+ * The FMCSA JSON API often omits phone/email, but the SAFER HTML page shows them.
+ */
+async function scrapeSAFERContact(dotNumber: string): Promise<{ phone?: string; email?: string }> {
+  try {
+    const url = `https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnap&query_param=USDOT&query_string=${dotNumber}`
+    const res = await fetch(url, { signal: timeoutSignal(API_TIMEOUT_MS) })
+    if (!res.ok) return {}
+
+    const html = await res.text()
+
+    // Extract phone: look for "Phone:" label followed by a value in the HTML table
+    let phone: string | undefined
+    const phoneMatch = html.match(/Phone\s*:\s*<\/th>\s*<td[^>]*>\s*([^<]+)/i)
+      || html.match(/Phone\s*:\s*<\/td>\s*<td[^>]*>\s*([^<]+)/i)
+      || html.match(/Phone[^<]*<[^>]*>\s*<[^>]*>\s*([(\d][\d\s().-]+\d)/i)
+    if (phoneMatch) {
+      const raw = phoneMatch[1].trim()
+      if (raw && raw.replace(/\D/g, '').length >= 10) {
+        phone = raw
+      }
+    }
+
+    // Extract email: look for mailto links or "Email:" label
+    let email: string | undefined
+    const emailMatch = html.match(/mailto:([^"'\s>]+)/i)
+      || html.match(/Email\s*:\s*<\/th>\s*<td[^>]*>\s*([^<]+)/i)
+      || html.match(/Email\s*:\s*<\/td>\s*<td[^>]*>\s*([^<]+)/i)
+    if (emailMatch) {
+      const raw = emailMatch[1].trim()
+      if (raw && raw.includes('@')) {
+        email = raw
+      }
+    }
+
+    return { phone, email }
+  } catch {
+    // SAFER scrape is best-effort â don't fail the whole lookup
+    return {}
+  }
 }
 
 /**
@@ -322,7 +379,7 @@ function parseCoverage(amount?: string): number | undefined {
   return isNaN(num) ? undefined : num
 }
 
-// ─── Demo Data (for development without API key) ───────────────────────────────
+// âââ Demo Data (for development without API key) âââââââââââââââââââââââââââââââ
 
 function getDemoCarrier(dotNumber: string): DOTLookupResult {
   const demos: Record<string, DOTLookupResult> = {
