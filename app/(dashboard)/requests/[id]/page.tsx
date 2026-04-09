@@ -40,7 +40,6 @@ function normalizeCoverageType(type?: string): string {
   if (t.includes('GENERAL')) return 'General Liability'
   if (t.includes('WORKERS') || t.includes('COMP')) return 'Workers Comp'
   if (t.includes('UMBRELLA')) return 'Umbrella'
-  // Return original if it's already a human-readable label
   if (type === type.charAt(0).toUpperCase() + type.slice(1).toLowerCase() || type.includes(' ')) return type
   return 'Auto Liability'
 }
@@ -122,38 +121,47 @@ export default function RequestDetailPage() {
   async function loadInsurance(autoFetch = true) {
     if (!params?.id) return
     setInsuranceLoading(true)
-    try {
-      const d = await (await fetch(`/api/requests/${params.id}/insurance`)).json()
-      if (d.history && d.history.length > 0) {
-        setInsurancePolicies(d.history.map((h: any) => ({
+    const fiveYearsAgo = new Date()
+    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5)
+
+    function mapAndFilter(history: any[]): InsurancePolicy[] {
+      return history
+        .map((h: any) => ({
           id: h.id, source: h.source,
           insurerName: h.carrierName || '',
           coverageType: normalizeCoverageType(h.policyType),
           policyNumber: h.policyNumber || '',
           startDate: h.effectiveDate ? h.effectiveDate.split('T')[0] : '',
           endDate: h.cancellationDate ? h.cancellationDate.split('T')[0] : '',
-        })))
+          isManual: h.source === 'MANUAL',
+        }))
+        .filter((p) => {
+          // Always show manual entries; filter FMCSA entries to last 5 years
+          if (p.isManual) return true
+          if (!p.endDate) return true // still active
+          return new Date(p.endDate) >= fiveYearsAgo
+        })
+    }
+
+    try {
+      const d = await (await fetch(`/api/requests/${params.id}/insurance`)).json()
+      if (d.history && d.history.length > 0) {
+        setInsurancePolicies(mapAndFilter(d.history))
       } else if (autoFetch) {
-        // No records in DB â auto-fetch from FMCSA
         const r = await fetch(`/api/requests/${params.id}/insurance`, {
-          method: 'POST', headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({action: 'fetch_fmcsa'}),
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'fetch_fmcsa' }),
         })
         const fd = await r.json()
         if (fd.history && fd.history.length > 0) {
-          setInsurancePolicies(fd.history.map((h: any) => ({
-            id: h.id, source: h.source,
-            insurerName: h.carrierName || '',
-            coverageType: normalizeCoverageType(h.policyType),
-            policyNumber: h.policyNumber || '',
-            startDate: h.effectiveDate ? h.effectiveDate.split('T')[0] : '',
-            endDate: h.cancellationDate ? h.cancellationDate.split('T')[0] : '',
-          })))
+          setInsurancePolicies(mapAndFilter(fd.history))
         }
       }
-    } catch {} finally { setInsuranceLoading(false) }
+    } catch { } finally { setInsuranceLoading(false) }
   }
+
   useEffect(() => { if (request?.id) loadInsurance() }, [request?.id])
+
   async function action(type: string, body?: object) {
     setActionLoading(type)
     try {
@@ -234,8 +242,8 @@ export default function RequestDetailPage() {
     if (!params?.id) return
     try {
       await fetch(`/api/requests/${params.id}/insurance`, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({action:'manual_add',carrierName:newPolicy.insurerName,policyType:newPolicy.coverageType,policyNumber:newPolicy.policyNumber,effectiveDate:newPolicy.startDate,cancellationDate:newPolicy.endDate}),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'manual_add', carrierName: newPolicy.insurerName, policyType: newPolicy.coverageType, policyNumber: newPolicy.policyNumber, effectiveDate: newPolicy.startDate, cancellationDate: newPolicy.endDate }),
       })
       await loadInsurance()
       setNewPolicy({ insurerName: '', coverageType: 'Auto Liability', policyNumber: '', startDate: '', endDate: '', isManual: true })
@@ -243,6 +251,7 @@ export default function RequestDetailPage() {
       toast.success('Policy added')
     } catch { toast.error('Failed to add policy') }
   }
+
   async function removePolicy(p: InsurancePolicy) {
     if (!params?.id || !p.id) return
     try {
@@ -251,6 +260,7 @@ export default function RequestDetailPage() {
       toast.success('Policy removed')
     } catch { toast.error('Failed to remove policy') }
   }
+
   if (loading) {
     return (
       <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
@@ -332,10 +342,11 @@ export default function RequestDetailPage() {
       </div>
 
       {editMode && (
-        <div style={{ ...card, padding: '24px', marginTop: '0' }}>
+        <div style={{ ...card, padding: '24px', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase' as const, color: '#94a3b8', marginTop: 0, marginBottom: '20px' }}>Edit Draft</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-          {[['companyName','Legal Name'],['dba','DBA'],['phone','Phone'],['email','Email']].map(([key, label]) => (              <div key={key}>
+            {[['companyName', 'Legal Name'], ['dba', 'DBA'], ['phone', 'Phone'], ['email', 'Email']].map(([key, label]) => (
+              <div key={key}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' as const, letterSpacing: '0.4px' }}>{label}</label>
                 <input
                   value={editForm[key] || ''}
@@ -361,6 +372,7 @@ export default function RequestDetailPage() {
       <div style={{ display: editMode ? 'none' : 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', alignItems: 'start' }}>
         {/* Left column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
           {/* Insured Info */}
           <div style={{ ...card, padding: '24px' }}>
             <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '16px', marginTop: 0 }}>Insured Information</h2>
@@ -379,34 +391,10 @@ export default function RequestDetailPage() {
             <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '16px', marginTop: 0 }}>Request Details</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
               <InfoField label="Years Requested" value={request.yearsRequested ? request.yearsRequested + ' Years' : undefined} bold />
-              <InfoField label="Policy Type" value={request.policyType} />
               <InfoField label="Insured Email" value={request.insuredEmail} />
               <InfoField label="CC Emails" value={request.ccEmails?.join(', ')} />
               {request.notes && <div style={{ gridColumn: '1 / -1' }}><InfoField label="Notes" value={request.notes} /></div>}
             </div>
-          </div>
-
-          {/* Carriers */}
-          <div style={{ ...card, padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Selected Carriers</h2>
-              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: '999px', fontSize: '11px', fontWeight: '500', background: '#dbeafe', color: '#1e40af' }}>{request.carriers?.length || 0}</span>
-            </div>
-            {!request.carriers?.length ? (
-              <p style={{ fontSize: '13px', color: '#94a3b8' }}>No carriers selected</p>
-            ) : (
-              <div>
-                {request.carriers.map((c, i) => (
-                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < request.carriers.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
-                    <div>
-                      <p style={{ fontSize: '13px', fontWeight: '500', color: '#0f172a', margin: 0 }}>{c.carrierName}</p>
-                      {c.carrierEmail && <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 0' }}>{c.carrierEmail}</p>}
-                    </div>
-                    {c.status === 'SENT' ? badge('#065f46', '#d1fae5', 'Sent') : badge('#475569', '#f1f5f9', c.status || 'Pending')}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Insurance History */}
@@ -520,7 +508,7 @@ export default function RequestDetailPage() {
                 <p style={{ fontSize: '13px', color: '#94a3b8' }}>Loading insurance history...</p>
               </div>
             ) : insurancePolicies.length === 0 ? (
-              <p style={{ fontSize: '13px', color: '#94a3b8' }}>No liability insurance records found</p>
+              <p style={{ fontSize: '13px', color: '#94a3b8' }}>No insurance records found for the last 5 years</p>
             ) : (
               <div>
                 {/* Table header */}
@@ -529,7 +517,7 @@ export default function RequestDetailPage() {
                   <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Coverage</span>
                   <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Policy #</span>
                   <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Dates</span>
-                  <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px', width: '24px' }}></span>
+                  <span style={{ width: '24px' }}></span>
                 </div>
                 {insurancePolicies.map((p, i) => (
                   <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.5fr auto', gap: '8px', padding: '10px 0', borderBottom: i < insurancePolicies.length - 1 ? '1px solid #f1f5f9' : 'none', alignItems: 'center' }}>
@@ -538,12 +526,13 @@ export default function RequestDetailPage() {
                       {p.isManual && <span style={{ fontSize: '10px', color: '#1c6edd', fontWeight: '500' }}>Manual</span>}
                     </div>
                     <p style={{ fontSize: '12px', color: '#475569', margin: 0 }}>{p.coverageType}</p>
-                    <p style={{ fontSize: '11px', color: '#475569', margin: 0, fontFamily: 'monospace' }}>{p.policyNumber || 'Ã¢ÂÂ'}</p>
+                    <p style={{ fontSize: '11px', color: '#475569', margin: 0, fontFamily: 'monospace' }}>{p.policyNumber || '\u2014'}</p>
                     <p style={{ fontSize: '12px', color: '#475569', margin: 0 }}>
-                      {p.startDate ? formatDate(p.startDate) : 'Ã¢ÂÂ'} Ã¢ÂÂ {p.endDate ? formatDate(p.endDate) : 'Present'}
+                      {p.startDate ? formatDate(p.startDate) : '\u2014'}{' \u2013 '}{p.endDate ? formatDate(p.endDate) : 'Present'}
                     </p>
                     <button
-          onClick={() => removePolicy(p)}                      title="Remove policy"
+                      onClick={() => removePolicy(p)}
+                      title="Remove policy"
                       style={{ width: '24px', height: '24px', border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '3px', padding: 0 }}
                       onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
                       onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
@@ -564,11 +553,13 @@ export default function RequestDetailPage() {
             <h3 style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '12px', marginTop: 0 }}>Status</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <SidebarRow label="Request" right={badge(statusStyle.color, statusStyle.bg, STATUS_LABELS[request.status] || request.status)} />
-              <SidebarRow label="Signature" right={badge(
-                request.signatureStatus === 'SIGNED' ? '#065f46' : request.signatureStatus === 'PENDING' ? '#92400e' : '#991b1b',
-                request.signatureStatus === 'SIGNED' ? '#d1fae5' : request.signatureStatus === 'PENDING' ? '#fef3c7' : '#fee2e2',
-                request.signatureStatus || 'N/A'
-              )} />
+              {request.status !== 'DRAFT' && request.signatureStatus && (
+                <SidebarRow label="Signature" right={badge(
+                  request.signatureStatus === 'SIGNED' ? '#065f46' : request.signatureStatus === 'PENDING' ? '#92400e' : '#991b1b',
+                  request.signatureStatus === 'SIGNED' ? '#d1fae5' : request.signatureStatus === 'PENDING' ? '#fef3c7' : '#fee2e2',
+                  request.signatureStatus
+                )} />
+              )}
               {request.signedAt && <SidebarRow label="Signed" value={formatDate(request.signedAt)} />}
               {request.sentToInsuredAt && <SidebarRow label="Sent to insured" value={timeAgo(request.sentToInsuredAt)} />}
               {request.sentToCarrierAt && <SidebarRow label="Sent to carriers" value={timeAgo(request.sentToCarrierAt)} />}
@@ -622,7 +613,7 @@ function InfoField({ label, value, bold, mono }: { label: string; value?: string
     <div>
       <p style={{ fontSize: '10px', fontWeight: '600', letterSpacing: '0.4px', textTransform: 'uppercase', color: '#94a3b8', margin: '0 0 3px' }}>{label}</p>
       <p style={{ fontSize: '13px', color: '#0f172a', fontWeight: bold ? '600' : '400', fontFamily: mono ? 'monospace' : 'inherit', margin: 0 }}>
-        {value || 'Ã¢ÂÂ'}
+        {value || '\u2014'}
       </p>
     </div>
   )
@@ -632,7 +623,7 @@ function SidebarRow({ label, value, right, mono }: { label: string; value?: stri
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
       <span style={{ fontSize: '11px', color: '#94a3b8' }}>{label}</span>
-      {right || <span style={{ fontSize: '11px', fontWeight: '500', color: '#0f172a', fontFamily: mono ? 'monospace' : 'inherit' }}>{value || 'Ã¢ÂÂ'}</span>}
+      {right || <span style={{ fontSize: '11px', fontWeight: '500', color: '#0f172a', fontFamily: mono ? 'monospace' : 'inherit' }}>{value || '\u2014'}</span>}
     </div>
   )
 }
