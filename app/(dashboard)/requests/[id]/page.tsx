@@ -241,11 +241,16 @@ export default function RequestDetailPage() {
     if (!newPolicy.insurerName || !newPolicy.startDate) { toast.error('Insurer name and start date are required'); return }
     if (!params?.id) return
     try {
-      await fetch(`/api/requests/${params.id}/insurance`, {
+      const res = await fetch(`/api/requests/${params.id}/insurance`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'manual_add', carrierName: newPolicy.insurerName, policyType: newPolicy.coverageType, policyNumber: newPolicy.policyNumber, effectiveDate: newPolicy.startDate, cancellationDate: newPolicy.endDate }),
+        body: JSON.stringify({ action: 'manual_add', carrierName: newPolicy.insurerName, policyType: newPolicy.coverageType, policyNumber: newPolicy.policyNumber, effectiveDate: newPolicy.startDate, cancellationDate: newPolicy.endDate || null }),
       })
-      await loadInsurance()
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error || `Failed to add policy (${res.status})`)
+        return
+      }
+      await loadInsurance(false)
       setNewPolicy({ insurerName: '', coverageType: 'Auto Liability', policyNumber: '', startDate: '', endDate: '', isManual: true })
       setShowAddForm(false)
       toast.success('Policy added')
