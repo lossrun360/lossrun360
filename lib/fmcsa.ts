@@ -169,15 +169,16 @@ async function fetchFMCSACarrier(dotNumber: string): Promise<FMCSACarrier | null
   const res = await fetch(url, { cache: 'no-store' }) // always fresh — carrier phone/email must not be stale
   if (!res.ok) return null
   const data = await res.json()
-  return Array.isArray(data?.content?.carrier)
-    ? data.content.carrier[0]
-    : (data?.content?.carrier || null)
+  const c = Array.isArray(data?.content?.carrier) ? data.content.carrier[0] : (data?.content?.carrier || null)
+  console.log('[FMCSA carrier] DOT:', dotNumber, 'phone keys:', c ? Object.keys(c).filter(k => /phone|tel/i.test(k)) : [], 'phyPhone:', c?.phyPhone, 'telephone:', c?.telephone)
+  return c
 }
 
 async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRecord[]> {
   const url = `${FMCSA_BASE}/carriers/${dotNumber}/insurance?webKey=${FMCSA_API_KEY}`
   // Disable caching — insurance data changes and stale empty responses would hide real records
   const res = await fetch(url, { cache: 'no-store' })
+  console.log('[FMCSA insurance] status:', res.status, 'DOT:', dotNumber)
   if (!res.ok) return []
   const data = await res.json()
   const content = data?.content || {}
