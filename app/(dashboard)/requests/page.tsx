@@ -58,9 +58,9 @@ export default async function RequestsPage({
   }))
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
+    <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxSizing: 'border-box' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', flexShrink: 0 }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.4px', margin: 0 }}>Dashboard</h1>
           <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>{(session?.user as any)?.agencyName || 'Your agency'}</p>
@@ -69,7 +69,7 @@ export default async function RequestsPage({
       </div>
 
       {/* Metric cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px', flexShrink: 0 }}>
         {metrics.map((m) => (
           <div key={m.label} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '20px 22px', boxShadow: '0 1px 2px rgba(15,23,42,0.05)' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -84,8 +84,8 @@ export default async function RequestsPage({
       </div>
 
       {/* Filters + Table */}
-      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', overflow: 'hidden', boxShadow: '0 1px 2px rgba(15,23,42,0.05)' }}>
-        <div style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', overflow: 'hidden', boxShadow: '0 1px 2px rgba(15,23,42,0.05)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', flexShrink: 0 }}>
           <form method="GET" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '200px' }}>
             <div style={{ position: 'relative', flex: 1, maxWidth: '300px' }}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
@@ -127,9 +127,9 @@ export default async function RequestsPage({
             </p>
           </div>
         ) : (
-          <RequestsTable requests={serializedRequests} />
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}><RequestsTable requests={serializedRequests} /></div>
         )}
       </div>
-    </div>
+        </div>
   )
 }
