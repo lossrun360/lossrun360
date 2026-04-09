@@ -15,6 +15,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
   const [dotInput, setDotInput] = useState('')
   const [lookupLoading, setLookupLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [operatingStatus, setOperatingStatus] = useState<string>('')
   const [form, setForm] = useState({
     companyName: '',
     dba: '',
@@ -31,6 +32,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
     setDotInput('')
     setLookupLoading(false)
     setSubmitting(false)
+    setOperatingStatus('')
     setForm({ companyName: '', dba: '', address: '', city: '', state: '', zip: '', phone: '', email: '' })
   }, [])
 
@@ -39,7 +41,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
     const handle = (e: KeyboardEvent) => { if (e.key === 'Escape') { onClose() } }
     document.addEventListener('keydown', handle)
     return () => document.removeEventListener('keydown', handle)
-  }, [isOpen, onClose, resetModal])
+  }, [isOpen, onClose])
 
   useEffect(() => {
     if (isOpen) { document.body.style.overflow = 'hidden' }
@@ -70,8 +72,8 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
         phone: data.phone || '',
         email: data.email || '',
       }))
+      setOperatingStatus(data.operatingStatus || '')
       setStep(2)
-      toast.success(`Found: ${data.companyName}`)
     } catch { toast.error('Failed to lookup DOT number') } finally { setLookupLoading(false) }
   }
 
@@ -92,13 +94,13 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
           zip: form.zip,
           phone: form.phone,
           email: form.email,
-          insuredEmail: form.email,
+          insuredEmail: form.email || undefined,
           carriers: [],
         }),
       })
       const data = await res.json()
       if (!res.ok) { toast.error(data.error || 'Failed to create request'); return }
-      toast.success('Request created!')
+      toast.success('Draft created!')
       onClose(); resetModal()
       router.push(`/requests/${data.id}`); router.refresh()
     } catch { toast.error('Failed to create request') } finally { setSubmitting(false) }
@@ -106,92 +108,136 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
 
   if (!isOpen) return null
 
-  const ovl: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }
-  const box: React.CSSProperties = { background: '#fff', borderRadius: '8px', width: '100%', maxWidth: '540px', boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden' }
-  const hdr: React.CSSProperties = { background: '#1c6edd', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }
-  const inp: React.CSSProperties = { display: 'block', width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '13px', color: '#0f172a', background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }
-  const lbl: React.CSSProperties = { display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.4px' }
-  const btnP: React.CSSProperties = { flex: 1, padding: '11px', background: '#1c6edd', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }
-  const btnS: React.CSSProperties = { padding: '11px 20px', background: '#fff', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '13px', fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit' }
+  const inp: React.CSSProperties = { display: 'block', width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '3px', fontSize: '13px', color: '#0f172a', background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }
+  const lbl: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: '500', color: '#475569', marginBottom: '5px' }
+  const btnP: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 16px', background: '#1c6edd', color: '#fff', borderRadius: '3px', fontSize: '13px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+  const btnS: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 16px', background: '#f1f5f9', color: '#475569', borderRadius: '3px', fontSize: '13px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+  const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '20px' }
 
   return (
-    <div style={ovl} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={box}>
-        <div style={hdr}>
-          <div>
-            <h2 style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: 0 }}>New Loss Run Request</h2>
-            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', margin: '2px 0 0' }}>
-              {step === 1 ? 'Look up carrier by USDOT number' : 'Review and confirm carrier information'}
-            </p>
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: '4px' }}>&#x2715;</button>
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', overflowY: 'auto' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <style>{'@keyframes spin { to { transform: rotate(360deg) } }'}</style>
+      <div style={{ background: '#f8fafc', borderRadius: '4px', width: '100%', maxWidth: '600px', boxShadow: '0 24px 64px rgba(15,23,42,0.22)', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '14px 20px', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', margin: 0 }}>New Loss Run Request</h2>
+          <button onClick={onClose} style={{ width: '28px', height: '28px', border: 'none', background: '#f1f5f9', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          </button>
         </div>
-        <div style={{ padding: '24px' }}>
+
+        {/* Body */}
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {/* Step 1: DOT Lookup */}
           {step === 1 && (
-            <form onSubmit={handleDOTLookup}>
-              <label style={lbl}>USDOT Number *</label>
-              <input
-                style={{ ...inp, fontSize: '16px', padding: '12px', letterSpacing: '1px' }}
-                placeholder="e.g. 1234567"
-                value={dotInput}
-                onChange={(e) => setDotInput(e.target.value)}
-                autoFocus
-              />
-              <p style={{ fontSize: '11px', color: '#94a3b8', margin: '6px 0 20px' }}>Enter the carrier&apos;s USDOT number to auto-fill information from FMCSA.</p>
-              <button type="submit" style={{ ...btnP, display: 'block', width: '100%', opacity: lookupLoading || !dotInput.trim() ? 0.6 : 1 }} disabled={lookupLoading || !dotInput.trim()}>
-                {lookupLoading ? 'Looking up...' : 'Look Up Carrier'}
-              </button>
-            </form>
-          )}
-          {step === 2 && (
-            <div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={lbl}>Legal Company Name *</label>
-                  <input style={inp} value={form.companyName} onChange={(e) => updateForm('companyName', e.target.value)} placeholder="Legal company name" />
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={lbl}>DBA / Trade Name</label>
-                  <input style={inp} value={form.dba} onChange={(e) => updateForm('dba', e.target.value)} placeholder="DBA or trade name (if different)" />
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={lbl}>USDOT #</label>
-                  <input style={{ ...inp, background: '#f8fafc', color: '#64748b' }} value={dotInput} readOnly />
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={lbl}>Street Address</label>
-                  <input style={inp} value={form.address} onChange={(e) => updateForm('address', e.target.value)} placeholder="Street address" />
-                </div>
-                <div>
-                  <label style={lbl}>City</label>
-                  <input style={inp} value={form.city} onChange={(e) => updateForm('city', e.target.value)} placeholder="City" />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div>
-                    <label style={lbl}>State</label>
-                    <input style={inp} value={form.state} onChange={(e) => updateForm('state', e.target.value)} placeholder="ST" maxLength={2} />
-                  </div>
-                  <div>
-                    <label style={lbl}>Zip</label>
-                    <input style={inp} value={form.zip} onChange={(e) => updateForm('zip', e.target.value)} placeholder="12345" />
-                  </div>
-                </div>
-                <div>
-                  <label style={lbl}>Phone</label>
-                  <input style={inp} value={form.phone} onChange={(e) => updateForm('phone', e.target.value)} placeholder="(555) 555-5555" />
-                </div>
-                <div>
-                  <label style={lbl}>Email</label>
-                  <input style={inp} type="email" value={form.email} onChange={(e) => updateForm('email', e.target.value)} placeholder="contact@company.com" />
-                </div>
+            <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', margin: '0 0 4px' }}>Enter USDOT Number</h3>
+                <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>We&apos;ll pull the carrier&apos;s info and insurance history from FMCSA.</p>
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={() => setStep(1)} style={btnS}>Back</button>
-                <button onClick={handleSubmit} style={{ ...btnP, opacity: submitting || !form.companyName ? 0.6 : 1 }} disabled={submitting || !form.companyName}>
-                  {submitting ? 'Creating...' : 'Create Request'}
-                </button>
+              <form onSubmit={handleDOTLookup}>
+                <label style={lbl}>USDOT Number</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    style={{ ...inp, fontSize: '16px', fontFamily: 'monospace', flex: 1 }}
+                    placeholder="e.g. 1234567"
+                    value={dotInput}
+                    onChange={(e) => setDotInput(e.target.value.replace(/\D/g, ''))}
+                    maxLength={10}
+                    autoFocus
+                    required
+                  />
+                  <button type="submit" style={{ ...btnP, flexShrink: 0, opacity: lookupLoading ? 0.7 : 1 }} disabled={lookupLoading}>
+                    {lookupLoading
+                      ? <><span style={{ width: '13px', height: '13px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />Looking...</>
+                      : 'Lookup'}
+                  </button>
+                </div>
+              </form>
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '3px', padding: '14px' }}>
+                <p style={{ fontSize: '11px', fontWeight: '600', color: '#475569', margin: '0 0 8px' }}>WHAT GETS PULLED AUTOMATICALLY</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
+                  {['Legal company name & DBA', 'Address & contact info', 'USDOT & operating status', '5-year insurance history'].map((item) => (
+                    <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#475569' }}>
+                      <span style={{ color: '#10b981', fontWeight: '700' }}>&#10003;</span>{item}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+          )}
+
+          {/* Step 2: Review Info */}
+          {step === 2 && (
+            <>
+              <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '3px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ color: '#10b981', fontWeight: '700', fontSize: '15px' }}>&#10003;</span>
+                <p style={{ fontSize: '12px', fontWeight: '600', color: '#10b981', margin: 0 }}>
+                  FMCSA Data Retrieved &mdash; DOT# {dotInput}{operatingStatus ? ` Â· ${operatingStatus}` : ''}
+                </p>
+              </div>
+
+              <div style={cardStyle}>
+                <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', margin: '0 0 12px' }}>Insured Information</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={lbl}>Legal Company Name *</label>
+                    <input style={inp} value={form.companyName} onChange={(e) => updateForm('companyName', e.target.value)} required />
+                  </div>
+                  <div>
+                    <label style={lbl}>DBA / Trade Name</label>
+                    <input style={inp} value={form.dba} onChange={(e) => updateForm('dba', e.target.value)} placeholder="(if different)" />
+                  </div>
+                  <div>
+                    <label style={lbl}>USDOT#</label>
+                    <input style={{ ...inp, background: '#f8fafc', color: '#64748b', fontFamily: 'monospace' }} value={dotInput} readOnly />
+                  </div>
+                  <div>
+                    <label style={lbl}>Phone</label>
+                    <input style={inp} value={form.phone} onChange={(e) => updateForm('phone', e.target.value)} placeholder="(555) 555-5555" />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={lbl}>Street Address</label>
+                    <input style={inp} value={form.address} onChange={(e) => updateForm('address', e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={lbl}>City</label>
+                    <input style={inp} value={form.city} onChange={(e) => updateForm('city', e.target.value)} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <label style={lbl}>State</label>
+                      <input style={inp} value={form.state} onChange={(e) => updateForm('state', e.target.value)} maxLength={2} />
+                    </div>
+                    <div>
+                      <label style={lbl}>ZIP</label>
+                      <input style={inp} value={form.zip} onChange={(e) => updateForm('zip', e.target.value)} />
+                    </div>
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={lbl}>Email</label>
+                    <input style={inp} type="email" value={form.email} onChange={(e) => updateForm('email', e.target.value)} placeholder="contact@company.com" />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <button onClick={() => setStep(1)} style={btnS}>&#8592; Back</button>
+                <button
+                  onClick={handleSubmit}
+                  style={{ ...btnP, opacity: submitting || !form.companyName ? 0.6 : 1 }}
+                  disabled={submitting || !form.companyName}
+                >
+                  {submitting ? 'Creating Draft...' : 'Create Draft'}
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
