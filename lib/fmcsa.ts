@@ -165,7 +165,7 @@ export async function searchByName(name: string): Promise<DOTLookupResult[]> {
 
 async function fetchFMCSACarrier(dotNumber: string): Promise<FMCSACarrier | null> {
   const url = `${FMCSA_BASE}/carriers/${dotNumber}?webKey=${FMCSA_API_KEY}`
-  const res = await fetch(url, { next: { revalidate: 3600 } }) // cache carrier info 1hr
+  const res = await fetch(url, { cache: 'no-store' }) // always fresh — carrier phone/email must not be stale
   if (!res.ok) return null
   const data = await res.json()
   return Array.isArray(data?.content?.carrier)
