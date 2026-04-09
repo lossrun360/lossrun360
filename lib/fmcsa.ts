@@ -5,10 +5,10 @@
  * Free API key: https://ai.fmcsa.dot.gov/API/index.aspx
  *
  * Confirmed working endpoints (as of 2026-04):
- *   GET /qc/services/carriers/{dotNumber}             â carrier snapshot (no phone in response)
- *   GET /qc/services/carriers/{dotNumber}/mc-numbers  â MC/MX docket numbers
- *   GET /qc/services/carriers/{dotNumber}/authority   â operating authority
- *   GET /qc/services/carriers/name/{name}             â search by name
+ *   GET /qc/services/carriers/{dotNumber}             — carrier snapshot (no phone in response)
+ *   GET /qc/services/carriers/{dotNumber}/mc-numbers  — MC/MX docket numbers
+ *   GET /qc/services/carriers/{dotNumber}/authority   — operating authority
+ *   GET /qc/services/carriers/name/{name}             — search by name
  *
  * NOTE: /insurance and /authority-history return 404 for many carriers via the mobile API.
  *       Phone/email may not always be available from the carrier snapshot endpoint.
@@ -215,7 +215,7 @@ export async function searchByName(name: string): Promise<DOTLookupResult[]> {
   }
 }
 
-// âââ Private helpers ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Private helpers ──────────────────────────────────────────────────────────
 
 async function fetchFMCSACarrier(dotNumber: string): Promise<FMCSACarrier | null> {
   const url = `${FMCSA_BASE}/carriers/${dotNumber}?webKey=${FMCSA_API_KEY}`
@@ -254,7 +254,7 @@ async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRec
   const url = `${FMCSA_BASE}/carriers/${dotNumber}/insurance?webKey=${FMCSA_API_KEY}`
   const res = await fetch(url, { cache: 'no-store', signal: timeoutSignal(API_TIMEOUT_MS) })
 
-  // 404 is normal â many carriers don't have this endpoint
+  // 404 is normal — many carriers don't have this endpoint
   if (!res.ok) return []
 
   const data = await res.json()
@@ -297,7 +297,7 @@ async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRec
         : 'BIPD/Primary'
 
     return {
-      carrierName: h.insCompany || h.insuranceCompany || h.insName || h.carrierName ||Unknown',
+      carrierName: h.insCompany || h.insuranceCompany || h.insName || h.carrierName || 'Unknown',
       policyType: coverageType,
       insurerName: h.insCompany || h.insuranceCompany || h.insName || 'Unknown',
       policyNumber: h.policyNumber || h.policyNbr || null,
@@ -349,7 +349,7 @@ async function scrapeSAFERContact(dotNumber: string): Promise<{ phone?: string; 
 
     return { phone, email }
   } catch {
-    // SAFER scrape is best-effort â don't fail the whole lookup
+    // SAFER scrape is best-effort — don't fail the whole lookup
     return {}
   }
 }
@@ -379,7 +379,7 @@ function parseCoverage(amount?: string): number | undefined {
   return isNaN(num) ? undefined : num
 }
 
-// âââ Demo Data (for development without API key) âââââââââââââââââââââââââââââââ
+// ─── Demo Data (for development without API key) ───────────────────────────────
 
 function getDemoCarrier(dotNumber: string): DOTLookupResult {
   const demos: Record<string, DOTLookupResult> = {
