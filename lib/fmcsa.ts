@@ -31,6 +31,7 @@ export interface FMCSACarrier {
   mailingState?: string
   mailingZip?: string
   telephone?: string
+  phyPhone?: string
   fax?: string
   email?: string
   mcs150Date?: string
@@ -118,7 +119,7 @@ export async function lookupByDOT(dotNumber: string): Promise<DOTLookupResult> {
       city: carrier.phyCity || carrier.mailingCity,
       state: carrier.phyState || carrier.mailingState,
       zip: carrier.phyZip || carrier.mailingZip,
-      phone: formatPhone(carrier.telephone),
+      phone: formatPhone(carrier.phyPhone || carrier.telephone),
       fax: formatPhone(carrier.fax),
       email: carrier.email,
       entityType: carrier.entityType,
@@ -182,10 +183,7 @@ async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRec
   const content = data?.content || {}
 
   // Log the raw response structure to diagnose field name issues
-  console.log('[FMCSA insurance] DOT:', dotNumber, 'content keys:', Object.keys(content))
-  if (content.carrier) {
-    console.log('[FMCSA insurance] carrier keys:', Object.keys(content.carrier))
-  }
+  console.log('[FMCSA insurance] DOT:', dotNumber, 'raw:', JSON.stringify(data).substring(0, 1000))
 
   // The FMCSA mobile API nests insurance records under content.carrier (lowercase).
   // Some API versions use content.Carrier (capitalized) or put records at the top level.
