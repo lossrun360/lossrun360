@@ -313,7 +313,7 @@ function formatPhone(phone?: string | number): string | undefined {
   if (tenDigits.length === 10) {
     return `(${tenDigits.slice(0, 3)}) ${tenDigits.slice(3, 6)}-${tenDigits.slice(6)}`
   }
-  return phone
+  return str
 }
 
 function parseCoverage(amount?: string): number | undefined {
