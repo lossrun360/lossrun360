@@ -1,49 +1,60 @@
 /**
  * FMCSA API Integration
  *
- * Uses the FMCSA public API to fetch carrier info, insurance history, and more.
+ * Uses the FMCSA public mobile API to fetch carrier info, MC numbers, and insurance.
  * Free API key: https://ai.fmcsa.dot.gov/API/index.aspx
  *
- * Primary endpoints:
- *   GET /safety/carriers/{dotNumber}          — carrier info
- *   GET /safety/carriers/{dotNumber}/cargo-carried
- *   GET /safety/carriers/{dotNumber}/insurance
- *   GET /safety/carriers/name/{name}          — search by name
+ * Confirmed working endpoints (as of 2026-04):
+ *   GET /qc/services/carriers/{dotNumber}             — carrier snapshot (no phone in response)
+ *   GET /qc/services/carriers/{dotNumber}/mc-numbers  — MC/MX docket numbers
+ *   GET /qc/services/carriers/{dotNumber}/authority   — operating authority
+ *   GET /qc/services/carriers/name/{name}             — search by name
+ *
+ * NOTE: /insurance and /authority-history return 404 for many carriers via the mobile API.
+ *       Phone/email are NOT exposed by the carrier snapshot endpoint.
  */
 
 const FMCSA_BASE = 'https://mobile.fmcsa.dot.gov/qc/services'
 const FMCSA_API_KEY = process.env.FMCSA_API_KEY || ''
 
+// Actual shape returned by GET /qc/services/carriers/{dot}
 export interface FMCSACarrier {
-  dotNumber: string
+  dotNumber: string | number
   legalName: string
-  dbaName?: string
-  carrierOperation?: string
-  hmFlag?: string
-  pcFlag?: string
+  dbaName?: string | null
+  // carrierOperation is returned as an OBJECT, not a string
+  carrierOperation?: { carrierOperationCode: string; carrierOperationDesc: string } | string
+  statusCode?: string          // 'A' = Active, 'I' = Inactive
   phyStreet?: string
   phyCity?: string
   phyState?: string
-  phyZip?: string
+  phyZipcode?: string          // NOTE: the API uses "phyZipcode", NOT "phyZip"
   phyCountry?: string
   mailingStreet?: string
   mailingCity?: string
   mailingState?: string
   mailingZip?: string
-  telephone?: string
-  phyPhone?: string
+  mailingZipcode?: string
+  telephone?: string           // May be absent for some carriers
+  phyPhone?: string            // May be absent for some carriers
   fax?: string
   email?: string
   mcs150Date?: string
+  mcs150FormDate?: string
   mcs150Mileage?: number
   mcs150MileageYear?: number
-  addDate?: string
-  oicState?: string
+  totalPowerUnits?: number     // NOTE: API returns "totalPowerUnits", not "nbr_power_unit"
+  totalDrivers?: number        // NOTE: API returns "totalDrivers", not "driverTotal"
+  // Legacy field name aliases (kept for safety)
   nbr_power_unit?: number
   driverTotal?: number
+  phyZip?: string
   mcNumber?: string
   entityType?: string
   operatingStatus?: string
+  bipdInsuranceOnFile?: string
+  cargoInsuranceOnFile?: string
+  ein?: number
 }
 
 export interface FMCSAInsuranceRecord {
@@ -87,6 +98,7 @@ export interface DOTLookupResult {
  */
 export async function lookupByDOT(dotNumber: string): Promise<DOTLookupResult> {
   const cleanDOT = dotNumber.replace(/\D/g, '')
+
   if (!cleanDOT || cleanDOT.length < 5) {
     return { found: false, dotNumber: cleanDOT, error: 'Invalid DOT number format' }
   }
@@ -97,9 +109,10 @@ export async function lookupByDOT(dotNumber: string): Promise<DOTLookupResult> {
   }
 
   try {
-    const [carrierRes, insuranceRes] = await Promise.allSettled([
+    const [carrierRes, insuranceRes, mcRes] = await Promise.allSettled([
       fetchFMCSACarrier(cleanDOT),
       fetchFMCSAInsurance(cleanDOT),
+      fetchFMCSAMcNumber(cleanDOT),
     ])
 
     if (carrierRes.status === 'rejected' || !carrierRes.value) {
@@ -107,27 +120,45 @@ export async function lookupByDOT(dotNumber: string): Promise<DOTLookupResult> {
     }
 
     const carrier = carrierRes.value
-    const insurance = insuranceRes.status === 'fulfilled' ? insuranceRes.value : []
+    const insurance =
+      insuranceRes.status === 'fulfilled' ? insuranceRes.value : []
+    const mcNumber =
+      mcRes.status === 'fulfilled' ? mcRes.value : null
+
+    // carrierOperation may come back as an object {carrierOperationCode, carrierOperationDesc}
+    const operationType =
+      carrier.carrierOperation && typeof carrier.carrierOperation === 'object'
+        ? (carrier.carrierOperation as { carrierOperationDesc: string }).carrierOperationDesc
+        : (carrier.carrierOperation as string | undefined)
+
+    // statusCode 'A' = Active, 'I' = Inactive; fall back to operatingStatus field
+    const operatingStatus =
+      carrier.statusCode === 'A' ? 'ACTIVE'
+      : carrier.statusCode === 'I' ? 'INACTIVE'
+      : (carrier.operatingStatus || carrier.statusCode)
 
     return {
       found: true,
       dotNumber: cleanDOT,
-      mcNumber: carrier.mcNumber,
+      mcNumber: mcNumber || carrier.mcNumber,
       companyName: carrier.legalName,
-      dbaName: carrier.dbaName,
+      dbaName: carrier.dbaName ?? undefined,
       address: carrier.phyStreet || carrier.mailingStreet,
       city: carrier.phyCity || carrier.mailingCity,
       state: carrier.phyState || carrier.mailingState,
-      zip: carrier.phyZip || carrier.mailingZip,
+      // API field is "phyZipcode", NOT "phyZip"
+      zip: carrier.phyZipcode || carrier.phyZip || carrier.mailingZip || carrier.mailingZipcode,
+      // Phone is not returned in the carrier snapshot for most carriers
       phone: formatPhone(carrier.phyPhone || carrier.telephone),
       fax: formatPhone(carrier.fax),
       email: carrier.email,
       entityType: carrier.entityType,
-      operationType: carrier.carrierOperation,
-      operatingStatus: carrier.operatingStatus,
-      totalTrucks: carrier.nbr_power_unit,
-      totalDrivers: carrier.driverTotal,
-      mcs150Date: carrier.mcs150Date,
+      operationType,
+      operatingStatus,
+      // API returns "totalPowerUnits" and "totalDrivers", not nbr_power_unit / driverTotal
+      totalTrucks: carrier.totalPowerUnits ?? carrier.nbr_power_unit,
+      totalDrivers: carrier.totalDrivers ?? carrier.driverTotal,
+      mcs150Date: carrier.mcs150Date || carrier.mcs150FormDate,
       insuranceHistory: insurance,
     }
   } catch (error) {
@@ -141,21 +172,29 @@ export async function lookupByDOT(dotNumber: string): Promise<DOTLookupResult> {
  */
 export async function searchByName(name: string): Promise<DOTLookupResult[]> {
   if (!FMCSA_API_KEY) return []
+
   try {
     const url = `${FMCSA_BASE}/carriers/name/${encodeURIComponent(name)}?webKey=${FMCSA_API_KEY}&start=0&size=10`
     const res = await fetch(url, { next: { revalidate: 300 } })
+
     if (!res.ok) return []
+
     const data = await res.json()
-    const carriers = data?.content?.carrier || []
-    return carriers.slice(0, 10).map((c: FMCSACarrier) => ({
+    const carriers: FMCSACarrier[] = Array.isArray(data?.content?.carrier)
+      ? data.content.carrier
+      : data?.content?.carrier
+        ? [data.content.carrier]
+        : []
+
+    return carriers.slice(0, 10).map((c) => ({
       found: true,
-      dotNumber: c.dotNumber,
+      dotNumber: String(c.dotNumber),
       mcNumber: c.mcNumber,
       companyName: c.legalName,
-      dbaName: c.dbaName,
+      dbaName: c.dbaName ?? undefined,
       city: c.phyCity,
       state: c.phyState,
-      operatingStatus: c.operatingStatus,
+      operatingStatus: c.statusCode === 'A' ? 'ACTIVE' : c.operatingStatus,
     }))
   } catch {
     return []
@@ -166,60 +205,82 @@ export async function searchByName(name: string): Promise<DOTLookupResult[]> {
 
 async function fetchFMCSACarrier(dotNumber: string): Promise<FMCSACarrier | null> {
   const url = `${FMCSA_BASE}/carriers/${dotNumber}?webKey=${FMCSA_API_KEY}`
-  const res = await fetch(url, { cache: 'no-store' }) // always fresh — carrier phone/email must not be stale
+  const res = await fetch(url, { cache: 'no-store' })
+
   if (!res.ok) return null
+
   const data = await res.json()
-  const c = Array.isArray(data?.content?.carrier) ? data.content.carrier[0] : (data?.content?.carrier || null)
-  console.log('[FMCSA carrier] DOT:', dotNumber, 'phone keys:', c ? Object.keys(c).filter(k => /phone|tel/i.test(k)) : [], 'phyPhone:', c?.phyPhone, 'telephone:', c?.telephone)
+  // The carrier is nested under content.carrier (object, not array, for this endpoint)
+  const c = Array.isArray(data?.content?.carrier)
+    ? data.content.carrier[0]
+    : (data?.content?.carrier || null)
   return c
+}
+
+/**
+ * Fetch MC/MX docket numbers for a carrier.
+ * Returns the first MC number found, formatted as "MC-XXXXXX".
+ */
+async function fetchFMCSAMcNumber(dotNumber: string): Promise<string | null> {
+  const url = `${FMCSA_BASE}/carriers/${dotNumber}/mc-numbers?webKey=${FMCSA_API_KEY}`
+  const res = await fetch(url, { cache: 'no-store' })
+
+  if (!res.ok) return null
+
+  const data = await res.json()
+  const records: Array<{ prefix: string; docketNumber: number }> = Array.isArray(data?.content)
+    ? data.content
+    : []
+
+  const mc = records.find((r) => r.prefix === 'MC')
+  return mc ? `MC-${mc.docketNumber}` : null
 }
 
 async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRecord[]> {
   const url = `${FMCSA_BASE}/carriers/${dotNumber}/insurance?webKey=${FMCSA_API_KEY}`
-  // Disable caching — insurance data changes and stale empty responses would hide real records
   const res = await fetch(url, { cache: 'no-store' })
-  console.log('[FMCSA insurance] status:', res.status, 'DOT:', dotNumber)
+
+  // 404 is normal — many carriers don't have this endpoint
   if (!res.ok) return []
+
   const data = await res.json()
   const content = data?.content || {}
 
-  // Log the raw response structure to diagnose field name issues
-  console.log('[FMCSA insurance] DOT:', dotNumber, 'raw:', JSON.stringify(data).substring(0, 1000))
-
-  // The FMCSA mobile API nests insurance records under content.carrier (lowercase).
-  // Some API versions use content.Carrier (capitalized) or put records at the top level.
-  // Resolve the nesting once, then check all known field name variants on that object.
   const carrier = content.carrier || content.Carrier || content
 
-  // Liability / BIPD insurance
+  // Liability / BIPD insurance records
   const liabilityRecords: any[] =
     (Array.isArray(carrier.liInsuranceOnFile) && carrier.liInsuranceOnFile.length > 0
-      ? carrier.liInsuranceOnFile : null) ||
+      ? carrier.liInsuranceOnFile
+      : null) ||
     (Array.isArray(carrier.liabilityInsuranceOnFile) && carrier.liabilityInsuranceOnFile.length > 0
-      ? carrier.liabilityInsuranceOnFile : null) ||
+      ? carrier.liabilityInsuranceOnFile
+      : null) ||
     (Array.isArray(carrier.insuranceOnFile) && carrier.insuranceOnFile.length > 0
-      ? carrier.insuranceOnFile : null) ||
+      ? carrier.insuranceOnFile
+      : null) ||
     (Array.isArray(carrier.liabilityInsuranceData) && carrier.liabilityInsuranceData.length > 0
-      ? carrier.liabilityInsuranceData : null) ||
+      ? carrier.liabilityInsuranceData
+      : null) ||
     []
 
-  // Cargo insurance
+  // Cargo insurance records
   const cargoRecords: any[] =
     (Array.isArray(carrier.cargoInsuranceOnFile) && carrier.cargoInsuranceOnFile.length > 0
-      ? carrier.cargoInsuranceOnFile : null) ||
+      ? carrier.cargoInsuranceOnFile
+      : null) ||
     []
 
   const allRecords = [...liabilityRecords, ...cargoRecords]
   if (allRecords.length === 0) return []
 
   return allRecords.slice(0, 30).map((h: any) => {
-    // Determine coverage type from typeDesc or policyType fields
     const rawType = h.typeDesc || h.policyType || ''
     const coverageType = rawType.toLowerCase().includes('cargo')
       ? 'Cargo'
       : rawType.toLowerCase().includes('bond')
-      ? 'Surety Bond'
-      : 'BIPD/Primary'
+        ? 'Surety Bond'
+        : 'BIPD/Primary'
 
     return {
       carrierName: h.insCompany || h.insuranceCompany || h.insName || h.carrierName || 'Unknown',
@@ -227,7 +288,6 @@ async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRec
       insurerName: h.insCompany || h.insuranceCompany || h.insName || 'Unknown',
       policyNumber: h.policyNumber || h.policyNbr || null,
       postedDate: h.postedDate || null,
-      // effectiveDate is when coverage started; cancelledDate is when it ended
       coverageFrom: h.effectiveDate || h.coverageFrom || h.postedDate || null,
       coverageTo: h.cancelledDate || h.cancellationDate || h.coverageTo || null,
       coverageAmount: parseCoverage(
@@ -239,13 +299,12 @@ async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRec
 
 /**
  * Format a raw phone number string into (XXX) XXX-XXXX.
- * Handles both 10-digit and 11-digit (with leading country code 1) numbers.
  */
 function formatPhone(phone?: string): string | undefined {
   if (!phone) return undefined
   const digits = phone.replace(/\D/g, '')
   if (!digits) return undefined
-  // Strip leading country code '1' for US numbers
+
   let tenDigits = digits
   if (digits.length === 11 && digits[0] === '1') {
     tenDigits = digits.slice(1)
@@ -253,7 +312,6 @@ function formatPhone(phone?: string): string | undefined {
   if (tenDigits.length === 10) {
     return `(${tenDigits.slice(0, 3)}) ${tenDigits.slice(3, 6)}-${tenDigits.slice(6)}`
   }
-  // Return original if we can't format it cleanly
   return phone
 }
 
@@ -263,7 +321,7 @@ function parseCoverage(amount?: string): number | undefined {
   return isNaN(num) ? undefined : num
 }
 
-// ─── Demo Data (for development without API key) ──────────────────────────────
+// ─── Demo Data (for development without API key) ───────────────────────────────
 
 function getDemoCarrier(dotNumber: string): DOTLookupResult {
   const demos: Record<string, DOTLookupResult> = {
