@@ -23,8 +23,8 @@ export default async function CarriersPage({
   })
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
+    <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', flexShrink: 0 }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', letterSpacing: '-0.4px', margin: 0 }}>
             Carrier Database
@@ -35,8 +35,8 @@ export default async function CarriersPage({
         </div>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.05)' }}>
-        <div style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.05)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <form method="GET" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
             <div style={{ position: 'relative', flex: 1, maxWidth: '320px' }}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
@@ -75,7 +75,7 @@ export default async function CarriersPage({
             </p>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc' }}>
                 {['Carrier', 'NAIC', 'Email', 'Phone'].map((h) => (
@@ -129,7 +129,7 @@ export default async function CarriersPage({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>
