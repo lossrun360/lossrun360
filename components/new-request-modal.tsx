@@ -25,6 +25,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
     zip: '',
     phone: '',
     email: '',
+    ccEmails: '',
   })
 
   const resetModal = useCallback(() => {
@@ -33,7 +34,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
     setLookupLoading(false)
     setSubmitting(false)
     setOperatingStatus('')
-    setForm({ companyName: '', dba: '', address: '', city: '', state: '', zip: '', phone: '', email: '' })
+    setForm({ companyName: '', dba: '', address: '', city: '', state: '', zip: '', phone: '', email: '', ccEmails: '' })
   }, [])
 
   useEffect(() => {
@@ -95,6 +96,7 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
           phone: form.phone,
           email: form.email,
           insuredEmail: form.email || undefined,
+          ccEmails: form.ccEmails ? form.ccEmails.split(',').map((e: string) => e.trim()).filter(Boolean) : [],
           carriers: [],
         }),
       })
@@ -223,6 +225,11 @@ export function NewRequestModal({ isOpen, onClose }: Props) {
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={lbl}>Email</label>
                     <input style={inp} type="email" value={form.email} onChange={(e) => updateForm('email', e.target.value)} placeholder="contact@company.com" />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={lbl}>CC Emails</label>
+                    <input style={inp} type="text" value={form.ccEmails} onChange={(e) => updateForm('ccEmails', e.target.value)} placeholder="email1@example.com, email2@example.com" />
+                    <span style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px', display: 'block' }}>Separate multiple emails with commas</span>
                   </div>
                 </div>
               </div>
