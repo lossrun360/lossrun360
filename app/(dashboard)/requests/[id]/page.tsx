@@ -31,6 +31,20 @@ const badge = (color: string, bg: string, text: string) => (
 
 const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', boxShadow: '0 1px 2px rgba(15,23,42,0.05)' }
 
+function normalizeCoverageType(type?: string): string {
+  if (!type) return 'Auto Liability'
+  const t = type.toUpperCase().replace(/[^A-Z]/g, '_')
+  if (t.includes('BIPD') || t.includes('AUTO') || t.includes('LIABILITY')) return 'Auto Liability'
+  if (t.includes('CARGO')) return 'Cargo'
+  if (t.includes('PHYSICAL') || t.includes('DAMAGE')) return 'Physical Damage'
+  if (t.includes('GENERAL')) return 'General Liability'
+  if (t.includes('WORKERS') || t.includes('COMP')) return 'Workers Comp'
+  if (t.includes('UMBRELLA')) return 'Umbrella'
+  // Return original if it's already a human-readable label
+  if (type === type.charAt(0).toUpperCase() + type.slice(1).toLowerCase() || type.includes(' ')) return type
+  return 'Auto Liability'
+}
+
 interface InsurancePolicy {
   insurerName: string
   coverageType: string
@@ -40,6 +54,13 @@ interface InsurancePolicy {
   isManual?: boolean
   id?: string
   source?: string
+}
+
+interface CarrierSuggestion {
+  id: string
+  name: string
+  shortName?: string
+  lossRunEmail?: string
 }
 
 export default function RequestDetailPage() {
@@ -57,12 +78,39 @@ export default function RequestDetailPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [newPolicy, setNewPolicy] = useState<InsurancePolicy>({
     insurerName: '',
-    coverageType: 'BIPD',
+    coverageType: 'Auto Liability',
     policyNumber: '',
     startDate: '',
     endDate: '',
     isManual: true,
   })
+  const [carrierSuggestions, setCarrierSuggestions] = useState<CarrierSuggestion[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const carrierSearchTimeout = useState<ReturnType<typeof setTimeout> | null>(null)
+
+  async function searchCarriers(query: string) {
+    if (!query.trim() || query.length < 2) { setCarrierSuggestions([]); setShowSuggestions(false); return }
+    try {
+      const res = await fetch(`/api/carriers?search=${encodeURIComponent(query)}&limit=8`)
+      const data = await res.json()
+      setCarrierSuggestions(data.carriers || [])
+      setShowSuggestions(true)
+    } catch { setCarrierSuggestions([]) }
+  }
+
+  function handleInsurerNameChange(value: string) {
+    setNewPolicy(prev => ({ ...prev, insurerName: value }))
+    if (carrierSearchTimeout[0]) clearTimeout(carrierSearchTimeout[0])
+    const t = setTimeout(() => searchCarriers(value), 200)
+    carrierSearchTimeout[1](t)
+    if (!value.trim()) setShowSuggestions(false)
+  }
+
+  function selectCarrierSuggestion(carrier: CarrierSuggestion) {
+    setNewPolicy(prev => ({ ...prev, insurerName: carrier.name }))
+    setCarrierSuggestions([])
+    setShowSuggestions(false)
+  }
 
   useEffect(() => {
     fetch(`/api/requests/${params.id}`)
@@ -71,40 +119,39 @@ export default function RequestDetailPage() {
       .catch(() => { toast.error('Failed to load request'); setLoading(false) })
   }, [params.id])
 
-  async function loadInsurance() {
-  if (!params?.id) return
-  setInsuranceLoading(true)
-  try {
-    const d = await (await fetch(`/api/requests/${params.id}/insurance`)).json()
-    if (d.history) setInsurancePolicies(d.history.map((h: any) => ({
-      id: h.id, source: h.source,
-      insurerName: h.carrierName || '',
-      coverageType: h.policyType || 'AUTO_LIABILITY',
-      policyNumber: h.policyNumber || '',
-      startDate: h.effectiveDate ? h.effectiveDate.split('T')[0] : '',
-      endDate: h.cancellationDate ? h.cancellationDate.split('T')[0] : '',
-    })))
-  } catch {} finally { setInsuranceLoading(false) }
-  }
-  async function fetchFromFMCSA() {
+  async function loadInsurance(autoFetch = true) {
     if (!params?.id) return
     setInsuranceLoading(true)
     try {
-      const r = await fetch(`/api/requests/${params.id}/insurance`, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({action: 'fetch_fmcsa'}),
-      })
-      const d = await r.json()
-      if (d.history) setInsurancePolicies(d.history.map((h: any) => ({
-        id: h.id, source: h.source,
-        insurerName: h.carrierName || '',
-        coverageType: h.policyType || 'AUTO_LIABILITY',
-        policyNumber: h.policyNumber || '',
-        startDate: h.effectiveDate ? h.effectiveDate.split('T')[0] : '',
-        endDate: h.cancellationDate ? h.cancellationDate.split('T')[0] : '',
-      })))
-      toast.success('Loaded from FMCSA')
-    } catch { toast.error('Failed to load from FMCSA') } finally { setInsuranceLoading(false) }
+      const d = await (await fetch(`/api/requests/${params.id}/insurance`)).json()
+      if (d.history && d.history.length > 0) {
+        setInsurancePolicies(d.history.map((h: any) => ({
+          id: h.id, source: h.source,
+          insurerName: h.carrierName || '',
+          coverageType: normalizeCoverageType(h.policyType),
+          policyNumber: h.policyNumber || '',
+          startDate: h.effectiveDate ? h.effectiveDate.split('T')[0] : '',
+          endDate: h.cancellationDate ? h.cancellationDate.split('T')[0] : '',
+        })))
+      } else if (autoFetch) {
+        // No records in DB â auto-fetch from FMCSA
+        const r = await fetch(`/api/requests/${params.id}/insurance`, {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({action: 'fetch_fmcsa'}),
+        })
+        const fd = await r.json()
+        if (fd.history && fd.history.length > 0) {
+          setInsurancePolicies(fd.history.map((h: any) => ({
+            id: h.id, source: h.source,
+            insurerName: h.carrierName || '',
+            coverageType: normalizeCoverageType(h.policyType),
+            policyNumber: h.policyNumber || '',
+            startDate: h.effectiveDate ? h.effectiveDate.split('T')[0] : '',
+            endDate: h.cancellationDate ? h.cancellationDate.split('T')[0] : '',
+          })))
+        }
+      }
+    } catch {} finally { setInsuranceLoading(false) }
   }
   useEffect(() => { if (request?.id) loadInsurance() }, [request?.id])
   async function action(type: string, body?: object) {
@@ -191,7 +238,7 @@ export default function RequestDetailPage() {
         body: JSON.stringify({action:'manual_add',carrierName:newPolicy.insurerName,policyType:newPolicy.coverageType,policyNumber:newPolicy.policyNumber,effectiveDate:newPolicy.startDate,cancellationDate:newPolicy.endDate}),
       })
       await loadInsurance()
-      setNewPolicy({ insurerName: '', coverageType: 'BIPD', policyNumber: '', startDate: '', endDate: '', isManual: true })
+      setNewPolicy({ insurerName: '', coverageType: 'Auto Liability', policyNumber: '', startDate: '', endDate: '', isManual: true })
       setShowAddForm(false)
       toast.success('Policy added')
     } catch { toast.error('Failed to add policy') }
@@ -362,19 +409,18 @@ export default function RequestDetailPage() {
             )}
           </div>
 
-          {/* FMCSA Liability Insurance History */}
+          {/* Insurance History */}
           <div style={{ ...card, padding: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>FMCSA Liability Insurance History</h2>
+                <h2 style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: '#94a3b8', margin: 0 }}>Insurance History</h2>
                 {insurancePolicies.length > 0 && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: '999px', fontSize: '11px', fontWeight: '500', background: '#dbeafe', color: '#1e40af' }}>{insurancePolicies.length}</span>
                 )}
               </div>
-        <button onClick={fetchFromFMCSA} disabled={insuranceLoading} style={{ fontSize: '12px', color: '#1c6edd', background: 'none', border: '1px solid #1c6edd', borderRadius: '4px', padding: '4px 10px', cursor: 'pointer', marginRight: '8px', fontFamily: 'inherit', fontWeight: '500' }}>{insuranceLoading ? 'Loading...' : 'Load from FMCSA'}</button>              
-    <button                
-onClick={() => setShowAddForm(!showAddForm)}
-                style={{ fontSize: '12px', color: '#1c6edd', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', fontFamily: 'inherit', fontWeight: '500' }}
+              <button
+                onClick={() => setShowAddForm(!showAddForm)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#1c6edd', background: 'none', border: '1px solid #1c6edd', borderRadius: '3px', cursor: 'pointer', padding: '4px 10px', fontFamily: 'inherit', fontWeight: '500' }}
               >
                 {showAddForm ? 'Cancel' : '+ Add Policy'}
               </button>
@@ -384,14 +430,33 @@ onClick={() => setShowAddForm(!showAddForm)}
             {showAddForm && (
               <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '14px', marginBottom: '14px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div>
+                  <div style={{ position: 'relative' }}>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px' }}>Insurer Name *</label>
                     <input
                       style={inp}
-                      placeholder="e.g. Progressive Commercial"
+                      placeholder="Search carriers..."
                       value={newPolicy.insurerName}
-                      onChange={(e) => setNewPolicy(prev => ({ ...prev, insurerName: e.target.value }))}
+                      onChange={(e) => handleInsurerNameChange(e.target.value)}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                      onFocus={() => newPolicy.insurerName.length >= 2 && searchCarriers(newPolicy.insurerName)}
+                      autoComplete="off"
                     />
+                    {showSuggestions && carrierSuggestions.length > 0 && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #e2e8f0', borderRadius: '3px', boxShadow: '0 4px 12px rgba(15,23,42,0.12)', zIndex: 50, maxHeight: '200px', overflowY: 'auto' }}>
+                        {carrierSuggestions.map((c) => (
+                          <div
+                            key={c.id}
+                            onMouseDown={() => selectCarrierSuggestion(c)}
+                            style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                            onMouseOver={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                            onMouseOut={(e) => (e.currentTarget.style.background = '#fff')}
+                          >
+                            <p style={{ fontSize: '13px', fontWeight: '500', color: '#0f172a', margin: 0 }}>{c.name}</p>
+                            {c.shortName && <p style={{ fontSize: '11px', color: '#94a3b8', margin: '1px 0 0' }}>{c.shortName}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px' }}>Coverage Type</label>
@@ -400,11 +465,13 @@ onClick={() => setShowAddForm(!showAddForm)}
                       value={newPolicy.coverageType}
                       onChange={(e) => setNewPolicy(prev => ({ ...prev, coverageType: e.target.value }))}
                     >
-                      <option value="BIPD">BIPD</option>
                       <option value="Auto Liability">Auto Liability</option>
-                      <option value="General Liability">General Liability</option>
+                      <option value="Commercial Auto">Commercial Auto</option>
                       <option value="Cargo">Cargo</option>
                       <option value="Physical Damage">Physical Damage</option>
+                      <option value="General Liability">General Liability</option>
+                      <option value="Workers Comp">Workers Comp</option>
+                      <option value="Umbrella">Umbrella</option>
                     </select>
                   </div>
                   <div>
@@ -450,7 +517,7 @@ onClick={() => setShowAddForm(!showAddForm)}
 
             {insuranceLoading ? (
               <div style={{ padding: '20px', textAlign: 'center' }}>
-                <p style={{ fontSize: '13px', color: '#94a3b8' }}>Loading insurance history from FMCSA...</p>
+                <p style={{ fontSize: '13px', color: '#94a3b8' }}>Loading insurance history...</p>
               </div>
             ) : insurancePolicies.length === 0 ? (
               <p style={{ fontSize: '13px', color: '#94a3b8' }}>No liability insurance records found</p>
@@ -471,9 +538,9 @@ onClick={() => setShowAddForm(!showAddForm)}
                       {p.isManual && <span style={{ fontSize: '10px', color: '#1c6edd', fontWeight: '500' }}>Manual</span>}
                     </div>
                     <p style={{ fontSize: '12px', color: '#475569', margin: 0 }}>{p.coverageType}</p>
-                    <p style={{ fontSize: '11px', color: '#475569', margin: 0, fontFamily: 'monospace' }}>{p.policyNumber || 'â'}</p>
+                    <p style={{ fontSize: '11px', color: '#475569', margin: 0, fontFamily: 'monospace' }}>{p.policyNumber || 'Ã¢ÂÂ'}</p>
                     <p style={{ fontSize: '12px', color: '#475569', margin: 0 }}>
-                      {p.startDate ? formatDate(p.startDate) : 'â'} â {p.endDate ? formatDate(p.endDate) : 'Present'}
+                      {p.startDate ? formatDate(p.startDate) : 'Ã¢ÂÂ'} Ã¢ÂÂ {p.endDate ? formatDate(p.endDate) : 'Present'}
                     </p>
                     <button
           onClick={() => removePolicy(p)}                      title="Remove policy"
@@ -555,7 +622,7 @@ function InfoField({ label, value, bold, mono }: { label: string; value?: string
     <div>
       <p style={{ fontSize: '10px', fontWeight: '600', letterSpacing: '0.4px', textTransform: 'uppercase', color: '#94a3b8', margin: '0 0 3px' }}>{label}</p>
       <p style={{ fontSize: '13px', color: '#0f172a', fontWeight: bold ? '600' : '400', fontFamily: mono ? 'monospace' : 'inherit', margin: 0 }}>
-        {value || 'â'}
+        {value || 'Ã¢ÂÂ'}
       </p>
     </div>
   )
@@ -565,7 +632,7 @@ function SidebarRow({ label, value, right, mono }: { label: string; value?: stri
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
       <span style={{ fontSize: '11px', color: '#94a3b8' }}>{label}</span>
-      {right || <span style={{ fontSize: '11px', fontWeight: '500', color: '#0f172a', fontFamily: mono ? 'monospace' : 'inherit' }}>{value || 'â'}</span>}
+      {right || <span style={{ fontSize: '11px', fontWeight: '500', color: '#0f172a', fontFamily: mono ? 'monospace' : 'inherit' }}>{value || 'Ã¢ÂÂ'}</span>}
     </div>
   )
 }
