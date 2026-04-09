@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { sendSignatureRequestEmail } from '@/lib/email'
 import { generateRequestNumber } from '@/lib/utils'
 import { z } from 'zod'
 
@@ -24,8 +23,8 @@ const CreateRequestSchema = z.object({
   totalDrivers: z.number().optional(),
   yearsRequested: z.number().default(5),
   policyType: z.string().optional(),
-  insuredEmail: z.string().email(),
-  ccEmails: z.array(z.string().email()).default([]),
+  insuredEmail: z.string().optional(),
+  ccEmails: z.array(z.string()).default([]),
   notes: z.string().optional(),
   carriers: z
     .array(
@@ -79,7 +78,6 @@ export async function POST(req: NextRequest) {
   const subscription = await prisma.subscription.findUnique({
     where: { agencyId: session.user.agencyId },
   })
-
   if (subscription) {
     const thisMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
     const monthCount = await prisma.lossRunRequest.count({
@@ -104,11 +102,6 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Look up the agency for email content
-    const agency = await prisma.agency.findUnique({
-      where: { id: session.user.agencyId },
-    })
-
     const request = await prisma.lossRunRequest.create({
       data: {
         requestNumber: generateRequestNumber(),
@@ -132,8 +125,7 @@ export async function POST(req: NextRequest) {
         insuredEmail: body.insuredEmail,
         ccEmails: body.ccEmails,
         notes: body.notes,
-        status: 'PENDING_SIGNATURE',
-        signatureStatus: 'PENDING',
+        status: 'DRAFT',
         agencyId: session.user.agencyId,
         createdById: session.user.id,
         carriers: {
@@ -152,36 +144,6 @@ export async function POST(req: NextRequest) {
       },
       include: { carriers: true },
     })
-
-    // Send signature request email
-    try {
-      await sendSignatureRequestEmail({
-        to: body.insuredEmail,
-        cc: body.ccEmails,
-        insuredName: body.ownerName || body.companyName,
-        agencyName: agency?.name || session.user.agencyName,
-        agentName: session.user.name || session.user.email,
-        requestId: request.id,
-        dotNumber: body.dotNumber,
-        companyName: body.companyName,
-      })
-
-      await prisma.lossRunRequest.update({
-        where: { id: request.id },
-        data: { sentToInsuredAt: new Date() },
-      })
-
-      await prisma.requestTimeline.create({
-        data: {
-          requestId: request.id,
-          event: 'SENT_FOR_SIGNATURE',
-          description: `Signature request sent to ${body.insuredEmail}`,
-        },
-      })
-    } catch (emailErr) {
-      console.error('Email send failed (non-fatal):', emailErr)
-      // Don't fail the whole request — just log it
-    }
 
     return NextResponse.json(request, { status: 201 })
   } catch (error) {
