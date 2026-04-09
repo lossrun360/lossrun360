@@ -5,10 +5,10 @@
  * Free API key: https://ai.fmcsa.dot.gov/API/index.aspx
  *
  * Primary endpoints:
- *   GET /safety/carriers/{dotNumber}           — carrier info
+ *   GET /safety/carriers/{dotNumber}          — carrier info
  *   GET /safety/carriers/{dotNumber}/cargo-carried
  *   GET /safety/carriers/{dotNumber}/insurance
- *   GET /safety/carriers/name/{name}           — search by name
+ *   GET /safety/carriers/name/{name}          — search by name
  */
 
 const FMCSA_BASE = 'https://mobile.fmcsa.dot.gov/qc/services'
@@ -107,8 +107,7 @@ export async function lookupByDOT(dotNumber: string): Promise<DOTLookupResult> {
     }
 
     const carrier = carrierRes.value
-    const insurance =
-      insuranceRes.status === 'fulfilled' ? insuranceRes.value : []
+    const insurance = insuranceRes.status === 'fulfilled' ? insuranceRes.value : []
 
     return {
       found: true,
@@ -142,16 +141,12 @@ export async function lookupByDOT(dotNumber: string): Promise<DOTLookupResult> {
  */
 export async function searchByName(name: string): Promise<DOTLookupResult[]> {
   if (!FMCSA_API_KEY) return []
-
   try {
     const url = `${FMCSA_BASE}/carriers/name/${encodeURIComponent(name)}?webKey=${FMCSA_API_KEY}&start=0&size=10`
     const res = await fetch(url, { next: { revalidate: 300 } })
-
     if (!res.ok) return []
-
     const data = await res.json()
     const carriers = data?.content?.carrier || []
-
     return carriers.slice(0, 10).map((c: FMCSACarrier) => ({
       found: true,
       dotNumber: c.dotNumber,
@@ -167,59 +162,126 @@ export async function searchByName(name: string): Promise<DOTLookupResult[]> {
   }
 }
 
-// ─── Private helpers ──────────────────────────────────────────────────────────
+// ─── Private helpers ────────────────────────────────────────────────────────────
 
 async function fetchFMCSACarrier(dotNumber: string): Promise<FMCSACarrier | null> {
   const url = `${FMCSA_BASE}/carriers/${dotNumber}?webKey=${FMCSA_API_KEY}`
   const res = await fetch(url, { next: { revalidate: 3600 } }) // cache 1hr
-
   if (!res.ok) return null
-
   const data = await res.json()
-    return Array.isArray(data?.content?.carrier) ? data.content.carrier[0] : (data?.content?.carrier || null)
+  return Array.isArray(data?.content?.carrier)
+    ? data.content.carrier[0]
+    : (data?.content?.carrier || null)
 }
 
 async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRecord[]> {
-  // The FMCSA L&I public portal has insurance data
-  // We use the authority history endpoint as an approximation
   const url = `${FMCSA_BASE}/carriers/${dotNumber}/insurance?webKey=${FMCSA_API_KEY}`
   const res = await fetch(url, { next: { revalidate: 3600 } })
-
   if (!res.ok) return []
 
   const data = await res.json()
-  const history = data?.content?.liabilityInsuranceOnFile || data?.content?.liabilityInsuranceData || data?.content?.insuranceOnFile || []
-  if (!Array.isArray(history)) return []
-  
-  // Map FMCSA authority history to our insurance record format
-  return history.slice(0, 20).map((h: any) => ({
-    carrierName: h.insCompany || h.insuranceCompany || h.carrierName || 'Unknown',
-    policyType: 'Auto Liability',
-        insurerName: h.insCompany || h.insuranceCompany || 'Unknown',
-    policyNumber: h.policyNumber || h.policyNbr || null,
-    postedDate: h.postedDate,
-        coverageFrom: h.coverageFrom || h.effectiveDate || h.postedDate,
-        coverageTo: h.coverageTo || h.cancellationDate || h.cancelledDate,
-      coverageAmount: parseCoverage(h.bipdAmount || h.coverageAmount || h.coverageAmnt),
-      }))
+  const content = data?.content || {}
+
+  // Log the raw response keys in development to help diagnose field name issues
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[FMCSA insurance] response keys:', Object.keys(content))
+  }
+
+  // Try every known field name variation for liability insurance records.
+  // The FMCSA mobile API uses "liInsuranceOnFile" in most responses, but
+  // older API versions and different endpoints may use other names.
+  const liabilityRecords: any[] =
+    (Array.isArray(content.liInsuranceOnFile) && content.liInsuranceOnFile.length > 0
+      ? content.liInsuranceOnFile
+      : null) ||
+    (Array.isArray(content.liabilityInsuranceOnFile) && content.liabilityInsuranceOnFile.length > 0
+      ? content.liabilityInsuranceOnFile
+      : null) ||
+    (Array.isArray(content.insuranceOnFile) && content.insuranceOnFile.length > 0
+      ? content.insuranceOnFile
+      : null) ||
+    (Array.isArray(content.liabilityInsuranceData) && content.liabilityInsuranceData.length > 0
+      ? content.liabilityInsuranceData
+      : null) ||
+    // Some responses nest under a Carrier object
+    (Array.isArray(content.Carrier?.liInsuranceOnFile) && content.Carrier.liInsuranceOnFile.length > 0
+      ? content.Carrier.liInsuranceOnFile
+      : null) ||
+    (Array.isArray(content.Carrier?.liabilityInsuranceOnFile) &&
+    content.Carrier.liabilityInsuranceOnFile.length > 0
+      ? content.Carrier.liabilityInsuranceOnFile
+      : null) ||
+    []
+
+  // Also capture cargo insurance records
+  const cargoRecords: any[] =
+    (Array.isArray(content.cargoInsuranceOnFile) && content.cargoInsuranceOnFile.length > 0
+      ? content.cargoInsuranceOnFile
+      : null) ||
+    (Array.isArray(content.Carrier?.cargoInsuranceOnFile) &&
+    content.Carrier.cargoInsuranceOnFile.length > 0
+      ? content.Carrier.cargoInsuranceOnFile
+      : null) ||
+    []
+
+  const allRecords = [...liabilityRecords, ...cargoRecords]
+  if (allRecords.length === 0) return []
+
+  return allRecords.slice(0, 30).map((h: any) => {
+    // Determine coverage type from typeDesc or policyType fields
+    const rawType = h.typeDesc || h.policyType || ''
+    const coverageType = rawType.toLowerCase().includes('cargo')
+      ? 'Cargo'
+      : rawType.toLowerCase().includes('bond')
+      ? 'Surety Bond'
+      : 'BIPD/Primary'
+
+    return {
+      carrierName: h.insCompany || h.insuranceCompany || h.insName || h.carrierName || 'Unknown',
+      policyType: coverageType,
+      insurerName: h.insCompany || h.insuranceCompany || h.insName || 'Unknown',
+      policyNumber: h.policyNumber || h.policyNbr || null,
+      postedDate: h.postedDate || null,
+      // effectiveDate / postedDate is when coverage started; cancelledDate is when it ended
+      coverageFrom: h.effectiveDate || h.coverageFrom || h.postedDate || null,
+      coverageTo: h.cancelledDate || h.cancellationDate || h.coverageTo || null,
+      coverageAmount: parseCoverage(
+        h.bipdAmount || h.bipdOnFile || h.coverageAmount || h.coverageAmnt
+      ),
+    }
+  })
 }
 
+/**
+ * Format a raw phone number string into (XXX) XXX-XXXX.
+ * Handles both 10-digit and 11-digit (with leading country code 1) numbers.
+ */
 function formatPhone(phone?: string): string | undefined {
   if (!phone) return undefined
   const digits = phone.replace(/\D/g, '')
-  if (digits.length === 10) {
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+  if (!digits) return undefined
+
+  // Strip leading country code '1' for US numbers
+  let tenDigits = digits
+  if (digits.length === 11 && digits[0] === '1') {
+    tenDigits = digits.slice(1)
   }
+
+  if (tenDigits.length === 10) {
+    return `(${tenDigits.slice(0, 3)}) ${tenDigits.slice(3, 6)}-${tenDigits.slice(6)}`
+  }
+
+  // Return original if we can't format it cleanly
   return phone
 }
 
 function parseCoverage(amount?: string): number | undefined {
   if (!amount) return undefined
-  const num = parseFloat(amount.replace(/[^0-9.]/g, ''))
+  const num = parseFloat(String(amount).replace(/[^0-9.]/g, ''))
   return isNaN(num) ? undefined : num
 }
 
-// ─── Demo Data (for development without API key) ───────────────────────────────
+// ─── Demo Data (for development without API key) ──────────────────────────────
 
 function getDemoCarrier(dotNumber: string): DOTLookupResult {
   const demos: Record<string, DOTLookupResult> = {
@@ -244,7 +306,7 @@ function getDemoCarrier(dotNumber: string): DOTLookupResult {
       insuranceHistory: [
         {
           carrierName: 'Progressive Commercial',
-          policyType: 'Auto Liability',
+          policyType: 'BIPD/Primary',
           insurerName: 'Progressive Commercial Insurance',
           policyNumber: 'PCT-20231234',
           coverageFrom: '2023-01-01',
@@ -253,7 +315,7 @@ function getDemoCarrier(dotNumber: string): DOTLookupResult {
         },
         {
           carrierName: 'Great West Casualty',
-          policyType: 'Auto Liability',
+          policyType: 'BIPD/Primary',
           insurerName: 'Great West Casualty Company',
           policyNumber: 'GW-20210987',
           coverageFrom: '2021-01-01',
@@ -282,7 +344,6 @@ function getDemoCarrier(dotNumber: string): DOTLookupResult {
     },
   }
 
-  // Return a generic demo result for any other DOT number
   return (
     demos[dotNumber] || {
       found: true,
@@ -303,7 +364,7 @@ function getDemoCarrier(dotNumber: string): DOTLookupResult {
       insuranceHistory: [
         {
           carrierName: 'Travelers Insurance',
-          policyType: 'Auto Liability',
+          policyType: 'BIPD/Primary',
           insurerName: 'Travelers Insurance',
           coverageFrom: '2023-06-01',
           coverageTo: '2024-06-01',
