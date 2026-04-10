@@ -317,8 +317,14 @@ async function fetchFMCSAInsurance(dotNumber: string): Promise<FMCSAInsuranceRec
  */
 async function scrapeSAFERContact(dotNumber: string): Promise<{ phone?: string; email?: string }> {
   try {
-    const url = `https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnap&query_param=USDOT&query_string=${dotNumber}`
-    const res = await fetch(url, { signal: timeoutSignal(API_TIMEOUT_MS) })
+    const url = 'https://safer.fmcsa.dot.gov/CompanySnapshot.aspx'
+    const formData = `searchtype=ANY&query_type=queryCarrierSnap&query_param=USDOT&query_string=${dotNumber}`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData,
+      signal: timeoutSignal(API_TIMEOUT_MS),
+    })
     if (!res.ok) return {}
 
     const html = await res.text()
