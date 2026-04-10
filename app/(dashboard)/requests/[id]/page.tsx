@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { formatDate, timeAgo } from '@/lib/utils'
-import type { LossRunRequest } from 'A/types'
+import type { LossRunRequest } from '@/types'
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Draft',
@@ -266,18 +266,17 @@ export default function RequestDetailPage() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        toast.error(err.error || `Failed to add policy (${res.status})`
+        toast.error(err.error || `Failed to add policy (${res.status})`)
         return
       }
       await loadInsurance(false)
-      setNewPolicy({ insurerName: '', coverageType: 'Auto Liability',
- policyNumber: '', startDate: '', endDate: '', isManual: true })
+      setNewPolicy({ insurerName: '', coverageType: 'Auto Liability', policyNumber: '', startDate: '', endDate: '', isManual: true })
       setShowAddForm(false)
       toast.success('Policy added')
     } catch { toast.error('Failed to add policy') }
   }
 
-  async function removePolicy(p: InsurancePolicy){
+  async function removePolicy(p: InsurancePolicy) {
     if (!params?.id || !p.id) return
     try {
       await fetch(`/api/requests/${params.id}/insurance/${p.id}`, { method: 'DELETE' })
@@ -290,7 +289,7 @@ export default function RequestDetailPage() {
     return (
       <div style={{ padding: '32px 40px', maxWidth: '1440px', margin: '0 auto' }}>
         {[...Array(4)].map((_, i) => (
-          <div key={i} style={{ height: G96px', background: '#f1f5f9', borderRadius: '4px', marginBottom: '16px', animation: 'pulse 1.5s infinite' }} />
+          <div key={i} style={{ height: '96px', background: '#f1f5f9', borderRadius: '4px', marginBottom: '16px', animation: 'pulse 1.5s infinite' }} />
         ))}
       </div>
     )
@@ -308,7 +307,11 @@ export default function RequestDetailPage() {
   }
 
   const statusStyle = STATUS_STYLE[request.status] || { color: '#475569', bg: '#f1f5f9' }
-  Inone', cursor: 'pointer', fontFamily: 'inherit' }
+  const canSendForSignature = request.status === 'DRAFT' || request.status === 'PENDING_SIGNATURE'
+  const canSendToCarrier = request.status === 'SIGNED'
+  const canRemind = request.status === 'PENDING_SIGNATURE'
+
+  const btnBase = { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '3px', fontSize: '13px', fontWeight: '500', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
   const btnSecondary = { ...btnBase, background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0' }
   const btnPrimary = { ...btnBase, background: '#1c6edd', color: '#fff' }
   const btnDanger = { ...btnBase, background: '#fee2e2', color: '#991b1b', width: '100%', justifyContent: 'center' }
@@ -336,7 +339,7 @@ export default function RequestDetailPage() {
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2h8l2 2v9H2V2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M8 2v3h3M4 7h5M4 9.5h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
               {actionLoading === 'pdf' ? 'Generating...' : 'Download PDF'}
             </button>
-            {/request.status === 'DRAFT' && !editMode && (
+            {request.status === 'DRAFT' && !editMode && (
               <button onClick={enterEditMode} style={btnSecondary}>Edit Draft</button>
             )}
             {editMode && (
@@ -347,7 +350,7 @@ export default function RequestDetailPage() {
             )}
             {canSendForSignature && (
               <button onClick={() => action('send', { type: 'signature' })} disabled={!!actionLoading} style={btnPrimary as any}>
-                {actiononLoading === 'send' ? 'Sending...' : 'Send for Signature'}
+                {actionLoading === 'send' ? 'Sending...' : 'Send for Signature'}
               </button>
             )}
             {canSendToCarrier && (
@@ -443,7 +446,7 @@ export default function RequestDetailPage() {
                       )}
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px' }}>Coverage Type</label>
+                       <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px' }}>Coverage Type</label>
                       <select style={inp} value={newPolicy.coverageType} onChange={(e) => setNewPolicy(prev => ({ ...prev, coverageType: e.target.value }))}>
                         <option value="Auto Liability">Auto Liability</option>
                         <option value="Commercial Auto">Commercial Auto</option>
@@ -487,7 +490,7 @@ export default function RequestDetailPage() {
                 <div>
                   {/* Table header */}
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.5fr auto', gap: '8px', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Insurer</span>
+                      <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Insurer</span>
                     <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Coverage</span>
                     <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Policy #</span>
                     <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Dates</span>
@@ -520,10 +523,10 @@ export default function RequestDetailPage() {
             <div style={{ ...card, padding: '20px' }}>
               <h3 style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '12px', marginTop: 0 }}>Status</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <SidebarRow label="Request" right={badge(statusStyle.color, statusStyle.bg, STATUS_LABELS[request.status] || request.status)}} />
+                <SidebarRow label="Request" right={badge(statusStyle.color, statusStyle.bg, STATUS_LABELS[request.status] || request.status)} />
                 {request.status !== 'DRAFT' && request.signatureStatus && (
                   <SidebarRow label="Signature" right={badge(
-                    request.signatureStatus === 'SIGNED' ? '#065f46' : request.signatureStatus === 'PENDING' ? '#92400e' :#991b1b',
+                    request.signatureStatus === 'SIGNED' ? '#065f46' : request.signatureStatus === 'PENDING' ? '#92400e' : '#991b1b',
                     request.signatureStatus === 'SIGNED' ? '#d1fae5' : request.signatureStatus === 'PENDING' ? '#fef3c7' : '#fee2e2',
                     request.signatureStatus
                   )} />
@@ -581,18 +584,4 @@ function InfoField({ label, value, bold, mono }: { label: string; value?: string
   return (
     <div>
       <p style={{ fontSize: '10px', fontWeight: '600', letterSpacing: '0.4px', textTransform: 'uppercase', color: '#94a3b8', margin: '0 0 3px' }}>{label}</p>
-      <p style={{ fontSize: '13px', color: '#0f172a', fontWeight: bold ? '600' : '400', fontFamily: mono ? 'monospace' : 'inherit', margin: 0 }}>
-        {value || '\u2014'}
-      </p>
-    </div>
-  )
-}
-
-function SidebarRow({ label, value, right, mono }: { label: string; value?: string; right?: React.ReactNode; mono?: boolean }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-      <span style={{ fontSize: '11px', color: '#94a3b8' }}>{label}</span>
-      {right || <span style={{ fontSize: '11px', fontWeight: '500', color: '#0f172a', fontFamily: mono ? 'monospace' : 'inherit' }}>{value || '\u2014'}</span>}
-    </div>
-  )
-}
+      <p style={{ fontSize: '13px', color: '#0f172a', fontWeight: bold ? '600' : '400', font
