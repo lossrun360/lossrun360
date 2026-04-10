@@ -446,7 +446,7 @@ export default function RequestDetailPage() {
                       )}
                     </div>
                     <div>
-                       <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px' }}>Coverage Type</label>
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#64748b', marginBottom: '4px' }}>Coverage Type</label>
                       <select style={inp} value={newPolicy.coverageType} onChange={(e) => setNewPolicy(prev => ({ ...prev, coverageType: e.target.value }))}>
                         <option value="Auto Liability">Auto Liability</option>
                         <option value="Commercial Auto">Commercial Auto</option>
@@ -490,7 +490,7 @@ export default function RequestDetailPage() {
                 <div>
                   {/* Table header */}
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.5fr auto', gap: '8px', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
-                      <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Insurer</span>
+                    <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Insurer</span>
                     <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Coverage</span>
                     <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Policy #</span>
                     <span style={{ fontSize: '10px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Dates</span>
@@ -584,4 +584,18 @@ function InfoField({ label, value, bold, mono }: { label: string; value?: string
   return (
     <div>
       <p style={{ fontSize: '10px', fontWeight: '600', letterSpacing: '0.4px', textTransform: 'uppercase', color: '#94a3b8', margin: '0 0 3px' }}>{label}</p>
-      <p style={{ fontSize: '13px', color: '#0f172a', fontWeight: bold ? '600' : '400', font
+      <p style={{ fontSize: '13px', color: '#0f172a', fontWeight: bold ? '600' : '400', fontFamily: mono ? 'monospace' : 'inherit', margin: 0 }}>
+        {value || '\u2014'}
+      </p>
+    </div>
+  )
+}
+
+function SidebarRow({ label, value, right, mono }: { label: string; value?: string; right?: React.ReactNode; mono?: boolean }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+      <span style={{ fontSize: '11px', color: '#94a3b8' }}>{label}</span>
+      {right || <span style={{ fontSize: '11px', fontWeight: '500', color: '#0f172a', fontFamily: mono ? 'monospace' : 'inherit' }}>{value || '\u2014'}</span>}
+    </div>
+  )
+}
