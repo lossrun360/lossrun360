@@ -62,7 +62,16 @@ export default async function DashboardLayout({
               justifyContent: 'center',
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#fff"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <circle cx="12" cy="12" r="10" />
               <path d="M12 6v6l4 2" />
             </svg>
@@ -92,7 +101,16 @@ export default async function DashboardLayout({
             marginBottom: '24px',
           }}
         >
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1c6edd" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#1c6edd"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
             <line x1="8" y1="21" x2="16" y2="21" />
             <line x1="12" y1="17" x2="12" y2="21" />
@@ -119,14 +137,15 @@ export default async function DashboardLayout({
             lineHeight: '1.5',
           }}
         >
-          LossRun360 is designed for desktop use. Please visit us on a computer or tablet for the best experience.
+          LossRun360 is designed for desktop use. Please visit us on a computer
+          or tablet for the best experience.
         </p>
       </div>
 
       {/* Desktop content */}
       <div className="lr360-desktop-content" style={{ height: '100vh', background: '#f8fafc', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <TopNav />
-        <main style={{ flex: 1, overflow: 'hidden' }}>
+        <main style={{ flex: 1, overflowY: 'auto' }}>
           {children}
         </main>
       </div>
