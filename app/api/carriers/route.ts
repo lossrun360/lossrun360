@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Only admins can add carriers
-  if (session.user.role !== 'AGENCY_ADMIN' && session.user.role !== 'SUPER_ADMIN') {
+  if (session.user.role !== 'ADMIN' && session.user.role !== 'AGENCY_ADMIN' && session.user.role !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
