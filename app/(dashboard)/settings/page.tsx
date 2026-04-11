@@ -53,7 +53,7 @@ export default function SettingsPage() {
       .catch(() => setBillingLoading(false))
   }, [])
 
-  const isAdmin = session?.user?.role === 'ADMIN'
+  const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'AGENCY_ADMIN' || session?.user?.role === 'SUPER_ADMIN'
 
   // Fetch users when admin
   useEffect(() => {
