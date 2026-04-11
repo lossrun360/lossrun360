@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get('status')
   const search = searchParams.get('search')
 
-  const where: any = { agencyId: session.user.agencyId }
+  const where: any = { createdById: session.user.id }
   if (status) where.status = status
   if (search) {
     where.OR = [
@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
   const subscription = await prisma.subscription.findUnique({
     where: { agencyId: session.user.agencyId },
   })
+
   if (subscription) {
     const thisMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
     const monthCount = await prisma.lossRunRequest.count({
@@ -144,7 +145,6 @@ export async function POST(req: NextRequest) {
       },
       include: { carriers: true },
     })
-
     return NextResponse.json(request, { status: 201 })
   } catch (error) {
     console.error('Create request error:', error)
