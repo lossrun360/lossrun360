@@ -1,13 +1,28 @@
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export const metadata = { title: 'Carrier Database – LossRun360' }
+export const metadata = { title: 'Carrier Database \u2013 LossRun360' }
 
 export default async function CarriersPage({
   searchParams,
 }: {
   searchParams: { search?: string }
 }) {
-  const where: any = { isActive: true }
+  const session = await getServerSession(authOptions)
+  const userId = (session?.user as any)?.id
+
+  // Get carriers associated with the current user's requests
+  const where: any = {
+    isActive: true,
+    requestCarriers: {
+      some: {
+        request: {
+          createdById: userId,
+        },
+      },
+    },
+  }
   if (searchParams.search) {
     where.OR = [
       { name: { contains: searchParams.search, mode: 'insensitive' } },
@@ -30,7 +45,7 @@ export default async function CarriersPage({
             Carrier Database
           </h1>
           <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px', marginBottom: 0 }}>
-            {carriers.length} carrier{carriers.length !== 1 ? 's' : ''} available
+            {carriers.length} carrier{carriers.length !== 1 ? 's' : ''} from your requests
           </p>
         </div>
       </div>
@@ -43,12 +58,8 @@ export default async function CarriersPage({
                 <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4"/>
                 <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
               </svg>
-              <input
-                name="search"
-                defaultValue={searchParams.search}
-                placeholder="Search carrier name or NAIC..."
-                style={{ width: '100%', padding: '7px 10px 7px 30px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', color: '#0f172a', background: '#f8fafc', outline: 'none', boxSizing: 'border-box' }}
-              />
+              <input name="search" defaultValue={searchParams.search} placeholder="Search carrier name or NAIC..."
+                style={{ width: '100%', padding: '7px 10px 7px 30px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', color: '#0f172a', background: '#f8fafc', outline: 'none', boxSizing: 'border-box' }} />
             </div>
             <button type="submit" style={{ padding: '7px 14px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', fontWeight: 500, color: '#475569', cursor: 'pointer' }}>
               Search
@@ -71,7 +82,7 @@ export default async function CarriersPage({
             </div>
             <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', margin: '0 0 4px' }}>No carriers found</p>
             <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
-              {searchParams.search ? 'Try a different search term.' : 'No carriers have been added yet.'}
+              {searchParams.search ? 'Try a different search term.' : 'Carriers will appear here once you create requests.'}
             </p>
           </div>
         ) : (
@@ -88,43 +99,36 @@ export default async function CarriersPage({
             <tbody>
               {carriers.map((carrier, i) => (
                 <tr key={carrier.id} style={{ borderBottom: i < carriers.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
-                  {/* Carrier name column */}
                   <td style={{ padding: '13px 16px' }}>
                     <div style={{ fontSize: '13px', fontWeight: 500, color: '#0f172a' }}>{carrier.name}</div>
                     {carrier.shortName && (
                       <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{carrier.shortName}</div>
                     )}
                   </td>
-                  {/* NAIC column */}
                   <td style={{ padding: '13px 16px' }}>
                     {carrier.naic ? (
                       <span style={{ fontSize: '12px', color: '#475569', fontFamily: 'monospace', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '2px 6px', whiteSpace: 'nowrap' }}>
                         {carrier.naic}
                       </span>
                     ) : (
-                      <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>
+                      <span style={{ color: '#cbd5e1', fontSize: '12px' }}>\u2014</span>
                     )}
                   </td>
-                  {/* Email column */}
                   <td style={{ padding: '13px 16px' }}>
                     {carrier.lossRunEmail ? (
-                      <a
-                        href={'mailto:' + carrier.lossRunEmail}
-                        style={{ fontSize: '12px', color: '#1c6edd', textDecoration: 'none', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}
-                      >
+                      <a href={'mailto:' + carrier.lossRunEmail} style={{ fontSize: '12px', color: '#1c6edd', textDecoration: 'none', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
                         {carrier.lossRunEmail}
                       </a>
                     ) : (
-                      <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>
+                      <span style={{ color: '#cbd5e1', fontSize: '12px' }}>\u2014</span>
                     )}
                   </td>
-                  {/* Phone column */}
                   <td style={{ padding: '13px 16px' }}>
                     {carrier.phone ? (
                       <span style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>{carrier.phone}</span>
                     ) : (
-                      <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>
-                   )}
+                      <span style={{ color: '#cbd5e1', fontSize: '12px' }}>\u2014</span>
+                    )}
                   </td>
                 </tr>
               ))}
