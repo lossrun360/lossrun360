@@ -1,5 +1,3 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 export const metadata = { title: 'Carrier Database \u2013 LossRun360' }
@@ -9,20 +7,8 @@ export default async function CarriersPage({
 }: {
   searchParams: { search?: string }
 }) {
-  const session = await getServerSession(authOptions)
-  const userId = (session?.user as any)?.id
+  const where: any = { isActive: true }
 
-  // Get carriers associated with the current user's requests
-  const where: any = {
-    isActive: true,
-    requestCarriers: {
-      some: {
-        request: {
-          createdById: userId,
-        },
-      },
-    },
-  }
   if (searchParams.search) {
     where.OR = [
       { name: { contains: searchParams.search, mode: 'insensitive' } },
@@ -45,7 +31,7 @@ export default async function CarriersPage({
             Carrier Database
           </h1>
           <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px', marginBottom: 0 }}>
-            {carriers.length} carrier{carriers.length !== 1 ? 's' : ''} from your requests
+            {carriers.length} carrier{carriers.length !== 1 ? 's' : ''} available
           </p>
         </div>
       </div>
@@ -58,8 +44,12 @@ export default async function CarriersPage({
                 <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4"/>
                 <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
               </svg>
-              <input name="search" defaultValue={searchParams.search} placeholder="Search carrier name or NAIC..."
-                style={{ width: '100%', padding: '7px 10px 7px 30px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', color: '#0f172a', background: '#f8fafc', outline: 'none', boxSizing: 'border-box' }} />
+              <input
+                name="search"
+                defaultValue={searchParams.search}
+                placeholder="Search carrier name or NAIC..."
+                style={{ width: '100%', padding: '7px 10px 7px 30px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', color: '#0f172a', background: '#f8fafc', outline: 'none', boxSizing: 'border-box' }}
+              />
             </div>
             <button type="submit" style={{ padding: '7px 14px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', fontWeight: 500, color: '#475569', cursor: 'pointer' }}>
               Search
@@ -82,7 +72,7 @@ export default async function CarriersPage({
             </div>
             <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', margin: '0 0 4px' }}>No carriers found</p>
             <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
-              {searchParams.search ? 'Try a different search term.' : 'Carriers will appear here once you create requests.'}
+              {searchParams.search ? 'Try a different search term.' : 'Carriers will appear here once they are added.'}
             </p>
           </div>
         ) : (
