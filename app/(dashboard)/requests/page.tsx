@@ -20,6 +20,7 @@ export default async function RequestsPage({
   searchParams: { status?: string; q?: string }
 }) {
   const session = await getServerSession(authOptions)
+  const userId = (session?.user as any)?.id
   const agencyId = (session?.user as any)?.agencyId
   const statusFilter = searchParams.status
   const query = searchParams.q
@@ -27,17 +28,17 @@ export default async function RequestsPage({
   const [requests, totalRequests, awaitingSignature, sentToCarriers, completedThisMonth] = await Promise.all([
     prisma.lossRunRequest.findMany({
       where: {
-        agencyId,
+        createdById: userId,
         ...(statusFilter && statusFilter !== 'ALL' ? { status: statusFilter as RequestStatus } : {}),
         ...(query ? { OR: [{ companyName: { contains: query, mode: 'insensitive' } }, { dotNumber: { contains: query, mode: 'insensitive' } }] } : {}),
       },
       orderBy: { createdAt: 'desc' },
       include: { carriers: true, createdBy: true },
     }),
-    prisma.lossRunRequest.count({ where: { agencyId } }),
-    prisma.lossRunRequest.count({ where: { agencyId, status: 'PENDING_SIGNATURE' } }),
-    prisma.lossRunRequest.count({ where: { agencyId, status: 'SENT_TO_CARRIER' } }),
-    prisma.lossRunRequest.count({ where: { agencyId, status: 'COMPLETED', updatedAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } } }),
+    prisma.lossRunRequest.count({ where: { createdById: userId } }),
+    prisma.lossRunRequest.count({ where: { createdById: userId, status: 'PENDING_SIGNATURE' } }),
+    prisma.lossRunRequest.count({ where: { createdById: userId, status: 'SENT_TO_CARRIER' } }),
+    prisma.lossRunRequest.count({ where: { createdById: userId, status: 'COMPLETED', updatedAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } } }),
   ])
 
   const metrics = [
@@ -130,6 +131,6 @@ export default async function RequestsPage({
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}><RequestsTable requests={serializedRequests} /></div>
         )}
       </div>
-        </div>
+    </div>
   )
 }
