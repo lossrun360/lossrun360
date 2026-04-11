@@ -10,7 +10,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const request = await prisma.lossRunRequest.findFirst({
     where: {
       id: params.id,
-      agencyId: session.user.agencyId, // Scope to agency
+      createdById: session.user.id, // Scope to current user
     },
     include: {
       createdBy: { select: { name: true, email: true } },
@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const request = await prisma.lossRunRequest.updateMany({
-    where: { id: params.id, agencyId: session.user.agencyId },
+    where: { id: params.id, createdById: session.user.id },
     data: updateData,
   })
 
@@ -60,7 +60,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
   // Soft-delete by cancelling, or hard delete for drafts
   const req2 = await prisma.lossRunRequest.findFirst({
-    where: { id: params.id, agencyId: session.user.agencyId },
+    where: { id: params.id, createdById: session.user.id },
   })
 
   if (!req2) return NextResponse.json({ error: 'Not found' }, { status: 404 })
