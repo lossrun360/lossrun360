@@ -1,4 +1,5 @@
 'use client'
+
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { PLANS } from '@/lib/stripe'
@@ -24,6 +25,13 @@ export default function SettingsPage() {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
   const [portalLoading, setPortalLoading] = useState(false)
 
+  // User management state
+  const [users, setUsers] = useState<any[]>([])
+  const [usersLoading, setUsersLoading] = useState(true)
+  const [showAddUser, setShowAddUser] = useState(false)
+  const [addUserForm, setAddUserForm] = useState({ name: '', email: '', role: 'USER' })
+  const [addingUser, setAddingUser] = useState(false)
+
   useEffect(() => {
     fetch('/api/settings')
       .then((r) => r.json())
@@ -38,24 +46,41 @@ export default function SettingsPage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
+
     fetch('/api/billing/subscription')
       .then((r) => r.json())
       .then((d) => { setSubscription(d); setBillingLoading(false) })
       .catch(() => setBillingLoading(false))
   }, [])
 
+  const isAdmin = session?.user?.role === 'ADMIN'
+
+  // Fetch users when admin
+  useEffect(() => {
+    if (!isAdmin) { setUsersLoading(false); return }
+    fetchUsers()
+  }, [isAdmin])
+
+  function fetchUsers() {
+    setUsersLoading(true)
+    fetch('/api/users')
+      .then((r) => r.json())
+      .then((d) => { setUsers(d.users || []); setUsersLoading(false) })
+      .catch(() => setUsersLoading(false))
+  }
+
   async function saveAgency(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
     try {
       const res = await fetch('/api/settings/agency', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(agencyForm),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(agencyForm),
       })
       if (!res.ok) { toast.error('Failed to save'); return }
       toast.success('Agency settings saved')
       setEditingAgency(false)
-    } catch { toast.error('Failed') }
-    finally { setSaving(false) }
+    } catch { toast.error('Failed') } finally { setSaving(false) }
   }
 
   async function saveProfile(e: React.FormEvent) {
@@ -63,19 +88,21 @@ export default function SettingsPage() {
     setSaving(true)
     try {
       const res = await fetch('/api/settings/profile', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profileForm),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileForm),
       })
       if (!res.ok) { toast.error('Failed to save'); return }
       await update({ name: profileForm.name })
       toast.success('Profile updated')
       setEditingProfile(false)
-    } catch { toast.error('Failed') }
-    finally { setSaving(false) }
+    } catch { toast.error('Failed') } finally { setSaving(false) }
   }
 
   async function changePassword(e: React.FormEvent) {
     e.preventDefault()
-    if (passwordForm.newPass !== passwordForm.confirm) { toast.error('Passwords do not match'); return }
+    if (passwordForm.newPass !== passwordForm.confirm) {
+      toast.error('Passwords do not match'); return
+    }
     setSaving(true)
     try {
       const res = await fetch('/api/settings/password', {
@@ -87,8 +114,36 @@ export default function SettingsPage() {
       toast.success('Password changed')
       setPasswordForm({ current: '', newPass: '', confirm: '' })
       setEditingPassword(false)
+    } catch { toast.error('Failed') } finally { setSaving(false) }
+  }
+
+  async function addUser(e: React.FormEvent) {
+    e.preventDefault()
+    setAddingUser(true)
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(addUserForm),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast.error(data.error || 'Failed to add user'); return }
+      toast.success('User invited successfully')
+      setAddUserForm({ name: '', email: '', role: 'USER' })
+      setShowAddUser(false)
+      fetchUsers()
+    } catch { toast.error('Failed') } finally { setAddingUser(false) }
+  }
+
+  async function toggleUserActive(userId: string, currentlyActive: boolean) {
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !currentlyActive }),
+      })
+      if (!res.ok) { toast.error('Failed to update user'); return }
+      toast.success(currentlyActive ? 'User deactivated' : 'User activated')
+      fetchUsers()
     } catch { toast.error('Failed') }
-    finally { setSaving(false) }
   }
 
   async function startCheckout(tier: string) {
@@ -102,8 +157,7 @@ export default function SettingsPage() {
       const data = await res.json()
       if (data.url) window.location.href = data.url
       else toast.error(data.error || 'Failed to start checkout')
-    } catch { toast.error('Failed') }
-    finally { setCheckoutLoading(null) }
+    } catch { toast.error('Failed') } finally { setCheckoutLoading(null) }
   }
 
   async function openPortal() {
@@ -113,11 +167,9 @@ export default function SettingsPage() {
       const data = await res.json()
       if (data.url) window.location.href = data.url
       else toast.error(data.error || 'Failed')
-    } catch { toast.error('Failed') }
-    finally { setPortalLoading(false) }
+    } catch { toast.error('Failed') } finally { setPortalLoading(false) }
   }
 
-  const isAdmin = session?.user?.role === 'AGENCY_ADMIN' || session?.user?.role === 'SUPER_ADMIN'
   const currentTier = subscription?.planTier || 'STARTER'
   const isActive = subscription?.status === 'ACTIVE' || subscription?.status === 'TRIALING'
 
@@ -127,6 +179,8 @@ export default function SettingsPage() {
   const btnP: React.CSSProperties = { padding: '8px 16px', background: '#1c6edd', color: '#fff', border: 'none', borderRadius: '3px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }
   const btnS: React.CSSProperties = { padding: '8px 16px', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '3px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }
   const btnEdit: React.CSSProperties = { padding: '5px 12px', background: 'transparent', color: '#1c6edd', border: '1px solid #1c6edd', borderRadius: '3px', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }
+  const btnDanger: React.CSSProperties = { padding: '5px 12px', background: 'transparent', color: '#dc2626', border: '1px solid #dc2626', borderRadius: '3px', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }
+  const btnSuccess: React.CSSProperties = { padding: '5px 12px', background: 'transparent', color: '#16a34a', border: '1px solid #16a34a', borderRadius: '3px', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }
 
   if (loading) return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '32px 40px' }}>
@@ -138,11 +192,13 @@ export default function SettingsPage() {
     <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '32px 40px' }}>
       <div style={{ marginBottom: '28px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', letterSpacing: '-0.4px', margin: 0 }}>Settings</h1>
-        <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px', marginBottom: 0 }}>Manage your agency, profile, and billing</p>
+        <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px', marginBottom: 0 }}>
+          {isAdmin ? 'Manage your agency, users, profile, and billing' : 'Manage your profile'}
+        </p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
-        {/* Agency Settings */}
+        {/* Agency Settings - Admin only */}
         {isAdmin && (
           <div style={card}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -278,91 +334,177 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Billing */}
-      <div style={{ ...card }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', margin: 0 }}>Billing & Subscription</h2>
-          {subscription?.stripeCustomerId && (
-            <button onClick={openPortal} disabled={portalLoading} style={btnS}>
-              {portalLoading ? 'Loading...' : 'Manage Billing'}
+      {/* User Management - Admin only */}
+      {isAdmin && (
+        <div style={{ ...card, marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', margin: 0 }}>User Management</h2>
+            <button onClick={() => setShowAddUser(!showAddUser)} style={btnEdit}>
+              {showAddUser ? 'Cancel' : '+ Add User'}
             </button>
+          </div>
+
+          {showAddUser && (
+            <form onSubmit={addUser} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '16px', marginBottom: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 140px', gap: '12px', alignItems: 'end' }}>
+                <div>
+                  <label style={lbl}>Name</label>
+                  <input style={inp} value={addUserForm.name} onChange={(e) => setAddUserForm(p => ({...p, name: e.target.value}))} required placeholder="Full name" />
+                </div>
+                <div>
+                  <label style={lbl}>Email</label>
+                  <input style={inp} type="email" value={addUserForm.email} onChange={(e) => setAddUserForm(p => ({...p, email: e.target.value}))} required placeholder="user@email.com" />
+                </div>
+                <div>
+                  <label style={lbl}>Role</label>
+                  <select style={{ ...inp, cursor: 'pointer' }} value={addUserForm.role} onChange={(e) => setAddUserForm(p => ({...p, role: e.target.value}))}>
+                    <option value="USER">User</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ marginTop: '12px' }}>
+                <button type="submit" style={btnP} disabled={addingUser}>{addingUser ? 'Inviting...' : 'Invite User'}</button>
+              </div>
+              <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '8px', marginBottom: 0 }}>A temporary password will be generated and sent to the user via email.</p>
+            </form>
+          )}
+
+          {usersLoading ? (
+            <div style={{ height: '80px', background: '#f1f5f9', borderRadius: '4px' }} />
+          ) : (
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc' }}>
+                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #e2e8f0' }}>Name</th>
+                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #e2e8f0' }}>Email</th>
+                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #e2e8f0' }}>Role</th>
+                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #e2e8f0' }}>Status</th>
+                    <th style={{ textAlign: 'right', padding: '10px 14px', fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #e2e8f0' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '10px 14px', color: '#0f172a', fontWeight: 500 }}>{u.name || '—'}</td>
+                      <td style={{ padding: '10px 14px', color: '#64748b' }}>{u.email}</td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 600, background: u.role === 'ADMIN' ? '#dbeafe' : '#f1f5f9', color: u.role === 'ADMIN' ? '#1e40af' : '#64748b' }}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 600, background: u.isActive ? '#d1fae5' : '#fee2e2', color: u.isActive ? '#065f46' : '#991b1b' }}>
+                          {u.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right' }}>
+                        {u.id !== (session?.user as any)?.id && (
+                          <button onClick={() => toggleUserActive(u.id, u.isActive)} style={u.isActive ? btnDanger : btnSuccess}>
+                            {u.isActive ? 'Deactivate' : 'Activate'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-        {!billingLoading && subscription && (
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>Current Plan</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>{subscription.planTier}</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 600, background: isActive ? '#d1fae5' : '#fef3c7', color: isActive ? '#065f46' : '#92400e' }}>
-                  {subscription.status}
-                </span>
-              </div>
-              <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
-                {subscription.requestsPerMonth >= 999999 ? 'Unlimited' : subscription.requestsPerMonth} requests/month &middot;{' '}
-                {subscription.usersAllowed >= 999999 ? 'Unlimited' : subscription.usersAllowed} users
-              </p>
-            </div>
-            {subscription.currentPeriodEnd && (
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '11px', color: '#94a3b8' }}>
-                  {subscription.cancelAtPeriodEnd ? 'Cancels' : 'Renews'} {formatDate(subscription.currentPeriodEnd)}
-                </div>
-                {subscription.trialEndAt && subscription.status === 'TRIALING' && (
-                  <div style={{ fontSize: '11px', color: '#1c6edd', marginTop: '2px' }}>
-                    Free trial ends {formatDate(subscription.trialEndAt)}
-                  </div>
-                )}
-              </div>
+      )}
+
+      {/* Billing - Admin only */}
+      {isAdmin && (
+        <div style={{ ...card }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', margin: 0 }}>Billing & Subscription</h2>
+            {subscription?.stripeCustomerId && (
+              <button onClick={openPortal} disabled={portalLoading} style={btnS}>
+                {portalLoading ? 'Loading...' : 'Manage Billing'}
+              </button>
             )}
           </div>
-        )}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-          {Object.values(PLANS).map((plan) => {
-            const isCurrent = currentTier === plan.tier && isActive
-            const isPopular = 'popular' in plan && plan.popular
-            return (
-              <div key={plan.tier} style={{ background: '#fff', border: `1px solid ${isPopular ? '#1c6edd' : '#e2e8f0'}`, borderRadius: '4px', padding: '20px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: isPopular ? '0 0 0 3px rgba(99,102,241,0.12)' : 'none' }}>
-                {isPopular && (
-                  <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)' }}>
-                    <span style={{ background: '#1c6edd', color: '#fff', fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px', whiteSpace: 'nowrap' }}>Most Popular</span>
-                  </div>
-                )}
-                <div style={{ marginBottom: '14px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', margin: '0 0 4px' }}>{plan.name}</h3>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                    <span style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a' }}>${plan.price}</span>
-                    <span style={{ fontSize: '12px', color: '#94a3b8' }}>/month</span>
-                  </div>
-                  <p style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', marginBottom: 0 }}>
-                    {plan.requests === -1 ? 'Unlimited requests' : `${plan.requests} requests/month`}
-                  </p>
+
+          {!billingLoading && subscription && (
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>Current Plan</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>{subscription.planTier}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 600, background: isActive ? '#d1fae5' : '#fef3c7', color: isActive ? '#065f46' : '#92400e' }}>
+                    {subscription.status}
+                  </span>
                 </div>
-                <ul style={{ listStyle: 'none', margin: '0 0 16px', padding: 0, flex: 1 }}>
-                  {plan.features.map((f) => (
-                    <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '6px', fontSize: '12px', color: '#64748b' }}>
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: '1px' }}>
-                        <path d="M3 8l3.5 3.5L13 4.5" stroke="#10b981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                {isCurrent ? (
-                  <div style={{ ...btnS, textAlign: 'center', opacity: 0.7, cursor: 'default' }}>Current Plan ✓</div>
-                ) : (
-                  <button onClick={() => startCheckout(plan.tier)} disabled={!!checkoutLoading} style={{ padding: '8px 16px', background: isPopular ? '#1c6edd' : '#f1f5f9', color: isPopular ? '#fff' : '#475569', border: isPopular ? 'none' : '1px solid #e2e8f0', borderRadius: '3px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'center' }}>
-                    {checkoutLoading === plan.tier ? 'Loading...' : 'Select Plan'}
-                  </button>
-                )}
+                <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
+                  {subscription.requestsPerMonth >= 999999 ? 'Unlimited' : subscription.requestsPerMonth} requests/month &middot;{' '}
+                  {subscription.usersAllowed >= 999999 ? 'Unlimited' : subscription.usersAllowed} users
+                </p>
               </div>
-            )
-          })}
+              {subscription.currentPeriodEnd && (
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+                    {subscription.cancelAtPeriodEnd ? 'Cancels' : 'Renews'} {formatDate(subscription.currentPeriodEnd)}
+                  </div>
+                  {subscription.trialEndAt && subscription.status === 'TRIALING' && (
+                    <div style={{ fontSize: '11px', color: '#1c6edd', marginTop: '2px' }}>
+                      Free trial ends {formatDate(subscription.trialEndAt)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            {Object.values(PLANS).map((plan) => {
+              const isCurrent = currentTier === plan.tier && isActive
+              const isPopular = 'popular' in plan && plan.popular
+              return (
+                <div key={plan.tier} style={{ background: '#fff', border: `1px solid ${isPopular ? '#1c6edd' : '#e2e8f0'}`, borderRadius: '4px', padding: '20px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: isPopular ? '0 0 0 3px rgba(99,102,241,0.12)' : 'none' }}>
+                  {isPopular && (
+                    <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)' }}>
+                      <span style={{ background: '#1c6edd', color: '#fff', fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px', whiteSpace: 'nowrap' }}>Most Popular</span>
+                    </div>
+                  )}
+                  <div style={{ marginBottom: '14px' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', margin: '0 0 4px' }}>{plan.name}</h3>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                      <span style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a' }}>${plan.price}</span>
+                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>/month</span>
+                    </div>
+                    <p style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', marginBottom: 0 }}>
+                      {plan.requests === -1 ? 'Unlimited requests' : `${plan.requests} requests/month`}
+                    </p>
+                  </div>
+                  <ul style={{ listStyle: 'none', margin: '0 0 16px', padding: 0, flex: 1 }}>
+                    {plan.features.map((f) => (
+                      <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '6px', fontSize: '12px', color: '#64748b' }}>
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: '1px' }}>
+                          <path d="M3 8l3.5 3.5L13 4.5" stroke="#10b981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  {isCurrent ? (
+                    <div style={{ ...btnS, textAlign: 'center', opacity: 0.7, cursor: 'default' }}>Current Plan ✓</div>
+                  ) : (
+                    <button onClick={() => startCheckout(plan.tier)} disabled={!!checkoutLoading} style={{ padding: '8px 16px', background: isPopular ? '#1c6edd' : '#f1f5f9', color: isPopular ? '#fff' : '#475569', border: isPopular ? 'none' : '1px solid #e2e8f0', borderRadius: '3px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'center' }}>
+                      {checkoutLoading === plan.tier ? 'Loading...' : 'Select Plan'}
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          <p style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', marginTop: '16px', marginBottom: 0 }}>
+            All plans include a 14-day free trial. Cancel anytime. Prices are per agency per month. Secure billing powered by Stripe.
+          </p>
         </div>
-        <p style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', marginTop: '16px', marginBottom: 0 }}>
-          All plans include a 14-day free trial. Cancel anytime. Prices are per agency per month. Secure billing powered by Stripe.
-        </p>
-      </div>
+      )}
     </div>
   )
 }
