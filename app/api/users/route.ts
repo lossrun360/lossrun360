@@ -13,8 +13,13 @@ export async function GET(req: NextRequest) {
     where: { agencyId: session.user.agencyId },
     orderBy: { createdAt: 'asc' },
     select: {
-      id: true, name: true, email: true, role: true,
-      isActive: true, lastLoginAt: true, createdAt: true,
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      isActive: true,
+      lastLoginAt: true,
+      createdAt: true,
     },
   })
 
@@ -25,7 +30,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (session.user.role !== 'AGENCY_ADMIN' && session.user.role !== 'SUPER_ADMIN') {
+  if (session.user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -33,9 +38,11 @@ export async function POST(req: NextRequest) {
   const subscription = await prisma.subscription.findUnique({
     where: { agencyId: session.user.agencyId },
   })
+
   const currentUserCount = await prisma.user.count({
     where: { agencyId: session.user.agencyId, isActive: true },
   })
+
   if (subscription && subscription.usersAllowed < 999999 && currentUserCount >= subscription.usersAllowed) {
     return NextResponse.json({ error: 'User limit reached. Please upgrade your plan.' }, { status: 402 })
   }
@@ -55,11 +62,16 @@ export async function POST(req: NextRequest) {
       name,
       email: email.toLowerCase(),
       password: hashed,
-      role: role || 'AGENT',
+      role: role || 'USER',
       agencyId: session.user.agencyId,
     },
     select: {
-      id: true, name: true, email: true, role: true, isActive: true, createdAt: true,
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      isActive: true,
+      createdAt: true,
     },
   })
 
